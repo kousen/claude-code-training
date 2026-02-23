@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lyrics Display</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0d0d1a;
+      color: #e8e6f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Animated background gradient */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(120, 60, 200, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(200, 80, 120, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(60, 100, 200, 0.1) 0%, transparent 40%);
+      z-index: -1;
+      animation: bgShift 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgShift {
+      0%   { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: rgba(200, 180, 255, 0.5);
+      margin-bottom: 3rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    /* Lyrics area */
+    #lyrics-display {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.6rem, 4.5vw, 2.8rem);
+      font-style: italic;
+      text-align: center;
+      min-height: 4em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+      color: #f0ecff;
+      position: relative;
+    }
+
+    #lyrics-display span {
+      display: inline-block;
+      transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
+    }
+
+    #lyrics-display span.hidden {
+      opacity: 0;
+      transform: translateY(12px);
+      filter: blur(4px);
+    }
+
+    /* Progress bar */
+    .progress-container {
+      width: 60%;
+      max-width: 300px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 1px;
+      margin-bottom: 2.5rem;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #9b6dff, #e06088);
+      border-radius: 1px;
+      transition: width 0.5s ease;
+    }
+
+    /* Line counter */
+    #line-counter {
+      font-size: 0.75rem;
+      font-weight: 300;
+      color: rgba(200, 180, 255, 0.35);
+      margin-bottom: 1rem;
+      letter-spacing: 0.15em;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    button {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      padding: 0.65rem 1.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(230, 220, 255, 0.7);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+      min-width: 90px;
+    }
+
+    button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #f0ecff;
+      transform: translateY(-1px);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.15;
+      cursor: default;
+    }
+
+    /* Play button — larger and centered */
+    #play-btn {
+      width: 56px;
+      height: 56px;
+      min-width: unset;
+      padding: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-color: rgba(180, 140, 255, 0.3);
+      font-size: 0;
+    }
+
+    #play-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: rgba(200, 180, 255, 0.8);
+      transition: fill 0.3s ease;
+    }
+
+    #play-btn:hover:not(:disabled) {
+      border-color: rgba(180, 140, 255, 0.6);
+      background: rgba(150, 100, 255, 0.12);
+    }
+
+    #play-btn:hover svg {
+      fill: #ddd0ff;
+    }
+
+    #play-btn.playing {
+      border-color: rgba(224, 96, 136, 0.5);
+      background: rgba(224, 96, 136, 0.08);
+      box-shadow: 0 0 20px rgba(224, 96, 136, 0.1);
+    }
+
+    #play-btn.playing svg {
+      fill: rgba(224, 140, 170, 0.9);
+    }
+
+    /* Keyboard hint */
+    .keyboard-hint {
+      margin-top: 2.5rem;
+      font-size: 0.65rem;
+      color: rgba(255, 255, 255, 0.15);
+      letter-spacing: 0.1em;
+    }
+
+    .keyboard-hint kbd {
+      font-family: 'Inter', sans-serif;
+      padding: 0.15em 0.5em;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      margin: 0 0.15em;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .container { padding: 1.5rem 1rem; }
+      h1 { margin-bottom: 2rem; font-size: 0.65rem; }
+      #lyrics-display { min-height: 3.5em; padding: 1.5rem 0.5rem; }
+      .progress-container { width: 80%; }
+      button { padding: 0.55rem 1.4rem; font-size: 0.75rem; min-width: 78px; }
+      #play-btn { width: 50px; height: 50px; }
+      .keyboard-hint { display: none; }
+    }
+
+    @media (max-width: 360px) {
+      .controls { gap: 0.5rem; }
+      button { padding: 0.5rem 1rem; min-width: 68px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Lyrics Display</h1>
+    <div id="lyrics-display"><span class="hidden">Loading...</span></div>
+    <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+    <div id="line-counter"></div>
+    <div class="controls">
+      <button id="prev-btn">Prev</button>
+      <button id="play-btn" aria-label="Play">
+        <svg id="play-icon" viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+      </button>
+      <button id="next-btn">Next</button>
+    </div>
+    <div class="keyboard-hint">
+      <kbd>&larr;</kbd> prev &nbsp; <kbd>Space</kbd> play/pause &nbsp; <kbd>&rarr;</kbd> next
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
