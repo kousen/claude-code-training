@@ -39,14 +39,25 @@ class APIKeyMissingError(WeatherAppError):
 # --- App configuration ---
 OWM_ENDPOINT = "https://api.openweathermap.org/data/2.5/weather"
 OWM_FORECAST_ENDPOINT = "https://api.openweathermap.org/data/2.5/forecast"
-GEOCODING_API_ENDPOINT = "http://api.openweathermap.org/geo/1.0/direct"
+GEOCODING_API_ENDPOINT = "https://api.openweathermap.org/geo/1.0/direct"
 API_TIMEOUT = 10  # seconds
+MAX_CITY_LENGTH = 100
 
 api_key = os.getenv("OWM_API_KEY")
 if not api_key:
     logger.warning("OWM_API_KEY is not set — API calls will fail until it is configured")
 
 app = Flask(__name__)
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self'; style-src 'self'"
+    return response
 
 
 # --- Flask error handlers ---
@@ -81,6 +92,9 @@ def home():
 @app.route("/<city>", methods=["GET", "POST"])
 def get_weather(city):
     logger.info("Weather request for city: %s", city)
+
+    if len(city) > MAX_CITY_LENGTH or not all(c.isalpha() or c in " -'.," for c in city):
+        raise CityNotFoundError("Invalid city name. Please use only letters, spaces, hyphens, and apostrophes.")
 
     if not api_key:
         raise APIKeyMissingError("Weather service is not configured. Please set the OWM_API_KEY environment variable.")
@@ -192,4 +206,4 @@ def error():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
