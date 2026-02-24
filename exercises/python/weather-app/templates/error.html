@@ -16,7 +16,7 @@
                     <img class="chevron-icon" src="/static/assets/chevron-left.png" alt="">
                     <a href="{{ url_for('home')}}"> CHANGE CITY </a>
                 </div>
-                <h2 id="error-text"> This city does not exist. Please try again. </h2>
+                <h2 id="error-text"> {{ error_message | default("This city does not exist. Please try again.") }} </h2>
                 <div class="footer">
                     <a href="https://rachanahegde.squarespace.com/"> © Rachana Hegde </a>
                 </div>

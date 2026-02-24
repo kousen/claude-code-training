@@ -7,7 +7,7 @@
         <title> Weather Forecast </title>
     </head>
     <body>
-        <main> 
+        <main>
             <div class="container">
                 <div class="change-button">
                     <img class="chevron-icon" src="/static/assets/chevron-left.png" alt="">
@@ -22,17 +22,18 @@
                     <div class="daily-section">
                         <img class="weather-icon" src="/static/assets/{{ current_weather.lower() }}.png" alt="">
                         <p class="forecast-text"> {{ current_weather }} </p>
-                    </div>  
+                    </div>
                     <div class="daily-section">
                         <img class="weather-icon" src="/static/assets/thermometer.png" alt="">
                         <p class="forecast-text"> {{min_temp }}° - {{ max_temp }}° </p>
-                    </div> 
+                    </div>
                     <div class="daily-section">
                         <img class="weather-icon" src="/static/assets/wind.png" alt="">
                         <p class="forecast-text"> {{ wind_speed }} meter/sec </p>
-                    </div> 
+                    </div>
                 </div>
                 <div class="divider"> </div>
+                {% if forecast_available %}
                 <h2> 5-DAY FORECAST </h2>
                 <div class="five-day">
                     <div class="forecast-item">
@@ -61,8 +62,12 @@
                         <p> {{ five_day_temp_list[4] }}º </p>
                     </div>
                 </div>
+                {% else %}
+                <h2> 5-DAY FORECAST </h2>
+                <p class="forecast-text"> Forecast temporarily unavailable. Please try again later. </p>
+                {% endif %}
                 <div class="footer">
-                    <a href="https://rachanahegde.squarespace.com/"> © Rachana Hegde </a>  
+                    <a href="https://rachanahegde.squarespace.com/"> © Rachana Hegde </a>
                 </div>
             </div>
         </main>
