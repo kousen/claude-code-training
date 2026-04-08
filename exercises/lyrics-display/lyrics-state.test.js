@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createLyricsState } from './lyrics-state.js';
+import { createLyricsState, DEFAULT_SPEED, MIN_SPEED, MAX_SPEED } from './lyrics-state.js';
 
 const sampleLines = [
     'Morning light filters through the window pane,',
@@ -137,6 +137,31 @@ describe('play/pause', () => {
         const state = createLyricsState(sampleLines);
         state.stop();
         expect(state.isPlaying).toBe(false);
+    });
+});
+
+describe('speed control', () => {
+    it('defaults to DEFAULT_SPEED', () => {
+        const state = createLyricsState(sampleLines);
+        expect(state.speed).toBe(DEFAULT_SPEED);
+    });
+
+    it('sets speed and returns the clamped value', () => {
+        const state = createLyricsState(sampleLines);
+        expect(state.setSpeed(1000)).toBe(1000);
+        expect(state.speed).toBe(1000);
+    });
+
+    it('clamps speed to MIN_SPEED', () => {
+        const state = createLyricsState(sampleLines);
+        expect(state.setSpeed(100)).toBe(MIN_SPEED);
+        expect(state.speed).toBe(MIN_SPEED);
+    });
+
+    it('clamps speed to MAX_SPEED', () => {
+        const state = createLyricsState(sampleLines);
+        expect(state.setSpeed(10000)).toBe(MAX_SPEED);
+        expect(state.speed).toBe(MAX_SPEED);
     });
 });
 

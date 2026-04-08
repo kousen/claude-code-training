@@ -1,4 +1,4 @@
-import { createLyricsState } from './lyrics-state.js';
+import { createLyricsState, DEFAULT_SPEED } from './lyrics-state.js';
 
 let state;
 let playInterval = null;
@@ -64,6 +64,17 @@ function previous() {
     }
 }
 
+function startInterval() {
+    clearInterval(playInterval);
+    playInterval = setInterval(() => {
+        if (!state.isLast) {
+            next();
+        } else {
+            stopPlay();
+        }
+    }, state.speed);
+}
+
 function togglePlay() {
     if (playInterval) {
         stopPlay();
@@ -73,13 +84,7 @@ function togglePlay() {
     const btn = document.getElementById('play-btn');
     btn.innerHTML = '&#9646;&#9646; Pause';
     btn.classList.add('playing');
-    playInterval = setInterval(() => {
-        if (!state.isLast) {
-            next();
-        } else {
-            stopPlay();
-        }
-    }, 2000);
+    startInterval();
 }
 
 function stopPlay() {
@@ -94,6 +99,17 @@ function stopPlay() {
 document.getElementById('prev-btn').addEventListener('click', previous);
 document.getElementById('play-btn').addEventListener('click', togglePlay);
 document.getElementById('next-btn').addEventListener('click', next);
+
+const speedSlider = document.getElementById('speed-slider');
+const speedValue = document.getElementById('speed-value');
+
+speedSlider.addEventListener('input', () => {
+    const ms = state.setSpeed(Number(speedSlider.value));
+    speedValue.textContent = `${(ms / 1000).toFixed(1)}s`;
+    if (playInterval) {
+        startInterval();
+    }
+});
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {

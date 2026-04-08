@@ -272,6 +272,74 @@ button:disabled:hover::before {
     letter-spacing: 0.08em;
 }
 
+/* Speed control */
+.speed-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+}
+
+.speed-control label {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #5a4a7a;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.speed-control input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 140px;
+    height: 3px;
+    background: #1a1528;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.speed-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #7c3aed;
+    border-radius: 50%;
+    border: 2px solid #0a0a12;
+    box-shadow: 0 0 6px rgba(124, 58, 237, 0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.speed-control input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #7c3aed;
+    border-radius: 50%;
+    border: 2px solid #0a0a12;
+    box-shadow: 0 0 6px rgba(124, 58, 237, 0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.speed-control input[type="range"]:hover::-webkit-slider-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(124, 58, 237, 0.6);
+}
+
+.speed-control input[type="range"]:hover::-moz-range-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(124, 58, 237, 0.6);
+}
+
+#speed-value {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #9985b5;
+    min-width: 2.5rem;
+    text-align: left;
+}
+
 /* Keyboard hint */
 .keyboard-hint {
     position: fixed;
