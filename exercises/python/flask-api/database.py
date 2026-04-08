@@ -1,160 +1,162 @@
-import sqlite3
+from __future__ import annotations
+
 import hashlib
-import datetime
+import logging
+import sqlite3
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Iterator
 
-user_db_file_location = "database_file/users.db"
-note_db_file_location = "database_file/notes.db"
-image_db_file_location = "database_file/images.db"
+from werkzeug.security import check_password_hash, generate_password_hash
 
-def list_users():
-    _conn = sqlite3.connect(user_db_file_location)
-    _c = _conn.cursor()
+logger = logging.getLogger(__name__)
 
-    _c.execute("SELECT id FROM users;")
-    result = [x[0] for x in _c.fetchall()]
-
-    _conn.close()
-    
-    return result
-
-def verify(id, pw):
-    _conn = sqlite3.connect(user_db_file_location)
-    _c = _conn.cursor()
-
-    _c.execute("SELECT pw FROM users WHERE id = '" + id + "';")
-    result = _c.fetchone()[0] == hashlib.sha256(pw.encode()).hexdigest()
-    
-    _conn.close()
-
-    return result
-
-def delete_user_from_db(id):
-    _conn = sqlite3.connect(user_db_file_location)
-    _c = _conn.cursor()
-    _c.execute("DELETE FROM users WHERE id = ?;", (id))
-    _conn.commit()
-    _conn.close()
-
-    # when we delete a user FROM database USERS, we also need to delete all his or her notes data FROM database NOTES
-    _conn = sqlite3.connect(note_db_file_location)
-    _c = _conn.cursor()
-    _c.execute("DELETE FROM notes WHERE user = ?;", (id))
-    _conn.commit()
-    _conn.close()
-
-    # when we delete a user FROM database USERS, we also need to 
-    # [1] delete all his or her images FROM image pool (done in app.py)
-    # [2] delete all his or her images records FROM database IMAGES
-    _conn = sqlite3.connect(image_db_file_location)
-    _c = _conn.cursor()
-    _c.execute("DELETE FROM images WHERE owner = ?;", (id))
-    _conn.commit()
-    _conn.close()
-
-def add_user(id, pw):
-    _conn = sqlite3.connect(user_db_file_location)
-    _c = _conn.cursor()
-
-    _c.execute("INSERT INTO users values(?, ?)", (id.upper(), hashlib.sha256(pw.encode()).hexdigest()))
-    
-    _conn.commit()
-    _conn.close()
-
-def read_note_from_db(id):
-    _conn = sqlite3.connect(note_db_file_location)
-    _c = _conn.cursor()
-
-    command = "SELECT note_id, timestamp, note FROM notes WHERE user = '" + id.upper() + "';" 
-    _c.execute(command)
-    result = _c.fetchall()
-
-    _conn.commit()
-    _conn.close()
-
-    return result
-
-def match_user_id_with_note_id(note_id):
-    # Given the note id, confirm if the current user is the owner of the note which is being operated.
-    _conn = sqlite3.connect(note_db_file_location)
-    _c = _conn.cursor()
-
-    command = "SELECT user FROM notes WHERE note_id = '" + note_id + "';" 
-    _c.execute(command)
-    result = _c.fetchone()[0]
-
-    _conn.commit()
-    _conn.close()
-
-    return result
-
-def write_note_into_db(id, note_to_write):
-    _conn = sqlite3.connect(note_db_file_location)
-    _c = _conn.cursor()
-
-    current_timestamp = str(datetime.datetime.now())
-    _c.execute("INSERT INTO notes values(?, ?, ?, ?)", (id.upper(), current_timestamp, note_to_write, hashlib.sha1((id.upper() + current_timestamp).encode()).hexdigest()))
-
-    _conn.commit()
-    _conn.close()
-
-def delete_note_from_db(note_id):
-    _conn = sqlite3.connect(note_db_file_location)
-    _c = _conn.cursor()
-
-    _c.execute("DELETE FROM notes WHERE note_id = ?;", (note_id))
-
-    _conn.commit()
-    _conn.close()
-
-def image_upload_record(uid, owner, image_name, timestamp):
-    _conn = sqlite3.connect(image_db_file_location)
-    _c = _conn.cursor()
-
-    _c.execute("INSERT INTO images VALUES (?, ?, ?, ?)", (uid, owner, image_name, timestamp))
-
-    _conn.commit()
-    _conn.close()
-
-def list_images_for_user(owner):
-    _conn = sqlite3.connect(image_db_file_location)
-    _c = _conn.cursor()
-
-    command = "SELECT uid, timestamp, name FROM images WHERE owner = '{0}'".format(owner)
-    _c.execute(command)
-    result = _c.fetchall()
-
-    _conn.commit()
-    _conn.close()
-
-    return result
-
-def match_user_id_with_image_uid(image_uid):
-    # Given the note id, confirm if the current user is the owner of the note which is being operated.
-    _conn = sqlite3.connect(image_db_file_location)
-    _c = _conn.cursor()
-
-    command = "SELECT owner FROM images WHERE uid = '" + image_uid + "';" 
-    _c.execute(command)
-    result = _c.fetchone()[0]
-
-    _conn.commit()
-    _conn.close()
-
-    return result
-
-def delete_image_from_db(image_uid):
-    _conn = sqlite3.connect(image_db_file_location)
-    _c = _conn.cursor()
-
-    _c.execute("DELETE FROM images WHERE uid = ?;", (image_uid))
-
-    _conn.commit()
-    _conn.close()
+USER_DB = Path("database_file/users.db")
+NOTE_DB = Path("database_file/notes.db")
+IMAGE_DB = Path("database_file/images.db")
 
 
+@contextmanager
+def get_db(db_path: Path) -> Iterator[sqlite3.Connection]:
+    """Context manager for database connections with automatic commit/rollback."""
+    conn = sqlite3.connect(str(db_path))
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
+# ── User operations ─────────────────────────────────────────────────────
 
+
+def list_users() -> list[str]:
+    """Return a list of all user IDs."""
+    with get_db(USER_DB) as conn:
+        cursor = conn.execute("SELECT id FROM users")
+        return [row[0] for row in cursor.fetchall()]
+
+
+def verify(user_id: str, password: str) -> bool:
+    """Verify a user's password against the stored hash."""
+    with get_db(USER_DB) as conn:
+        cursor = conn.execute("SELECT pw FROM users WHERE id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row is None:
+            logger.warning("Login attempt for non-existent user: %s", user_id)
+            return False
+        return check_password_hash(row[0], password)
+
+
+def add_user(user_id: str, password: str) -> None:
+    """Add a new user with a securely hashed password."""
+    hashed = generate_password_hash(password)
+    with get_db(USER_DB) as conn:
+        conn.execute("INSERT INTO users VALUES (?, ?)", (user_id.upper(), hashed))
+    logger.info("User added: %s", user_id.upper())
+
+
+def delete_user_from_db(user_id: str) -> None:
+    """Delete a user and all their associated notes and image records."""
+    with get_db(USER_DB) as conn:
+        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+    with get_db(NOTE_DB) as conn:
+        conn.execute("DELETE FROM notes WHERE user = ?", (user_id,))
+
+    with get_db(IMAGE_DB) as conn:
+        conn.execute("DELETE FROM images WHERE owner = ?", (user_id,))
+
+    logger.info("User deleted: %s", user_id)
+
+
+# ── Note operations ─────────────────────────────────────────────────────
+
+
+def read_notes_for_user(user_id: str) -> list[tuple[str, str, str]]:
+    """Read all notes for a given user. Returns list of (note_id, timestamp, note)."""
+    with get_db(NOTE_DB) as conn:
+        cursor = conn.execute(
+            "SELECT note_id, timestamp, note FROM notes WHERE user = ?",
+            (user_id.upper(),),
+        )
+        return cursor.fetchall()
+
+
+def match_user_id_with_note_id(note_id: str) -> str | None:
+    """Return the owner of a note, or None if not found."""
+    with get_db(NOTE_DB) as conn:
+        cursor = conn.execute(
+            "SELECT user FROM notes WHERE note_id = ?", (note_id,)
+        )
+        row = cursor.fetchone()
+        return row[0] if row else None
+
+
+def write_note_into_db(user_id: str, note_to_write: str) -> None:
+    """Create a new note for the given user."""
+    current_timestamp = str(datetime.now(timezone.utc))
+    note_id = hashlib.sha1(
+        (user_id.upper() + current_timestamp).encode()
+    ).hexdigest()
+    with get_db(NOTE_DB) as conn:
+        conn.execute(
+            "INSERT INTO notes VALUES (?, ?, ?, ?)",
+            (user_id.upper(), current_timestamp, note_to_write, note_id),
+        )
+    logger.info("Note created for user %s", user_id.upper())
+
+
+def delete_note_from_db(note_id: str) -> None:
+    """Delete a note by its ID."""
+    with get_db(NOTE_DB) as conn:
+        conn.execute("DELETE FROM notes WHERE note_id = ?", (note_id,))
+    logger.info("Note deleted: %s", note_id)
+
+
+# ── Image operations ────────────────────────────────────────────────────
+
+
+def image_upload_record(
+    uid: str, owner: str, image_name: str, timestamp: str
+) -> None:
+    """Record an image upload in the database."""
+    with get_db(IMAGE_DB) as conn:
+        conn.execute(
+            "INSERT INTO images VALUES (?, ?, ?, ?)",
+            (uid, owner, image_name, timestamp),
+        )
+    logger.info("Image recorded: %s for user %s", uid, owner)
+
+
+def list_images_for_user(owner: str) -> list[tuple[str, str, str]]:
+    """List all images for a user. Returns list of (uid, timestamp, name)."""
+    with get_db(IMAGE_DB) as conn:
+        cursor = conn.execute(
+            "SELECT uid, timestamp, name FROM images WHERE owner = ?", (owner,)
+        )
+        return cursor.fetchall()
+
+
+def match_user_id_with_image_uid(image_uid: str) -> str | None:
+    """Return the owner of an image, or None if not found."""
+    with get_db(IMAGE_DB) as conn:
+        cursor = conn.execute(
+            "SELECT owner FROM images WHERE uid = ?", (image_uid,)
+        )
+        row = cursor.fetchone()
+        return row[0] if row else None
+
+
+def delete_image_from_db(image_uid: str) -> None:
+    """Delete an image record by its UID."""
+    with get_db(IMAGE_DB) as conn:
+        conn.execute("DELETE FROM images WHERE uid = ?", (image_uid,))
+    logger.info("Image record deleted: %s", image_uid)
 
 
 if __name__ == "__main__":

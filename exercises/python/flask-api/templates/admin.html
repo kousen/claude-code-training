@@ -2,7 +2,7 @@
 {% block page_title %}Admin Dashboard{% endblock %}
 {% block body %}
     {{ super() }}
-    
+
     {# only invoked when failed adding new ID due to duplication #}
     {% if id_to_add_is_duplicated %}
     <div class="alert alert-dismissible alert-danger">
@@ -10,7 +10,7 @@
       <strong>Warning!</strong> The account name already exists.
     </div>
     {% endif %}
-    
+
     {# only invoked when failed adding new ID due to invalid character #}
     {% if id_to_add_is_invalid %}
     <div class="alert alert-dismissible alert-danger">
@@ -54,9 +54,13 @@
                         <tr>
                            <th> {{ number }} </th>
                            <td> {{ id }} </td>
-                           <td><a href={{act}}>Delete</a></td>
+                           <td>
+                             <form action="{{ act }}" method="post" style="display:inline;">
+                               <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                             </form>
+                           </td>
                         </tr>
-                        
+
                 {% endfor %}
                 </table>
         </div>

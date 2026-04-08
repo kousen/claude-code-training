@@ -6,7 +6,7 @@
     <h4>You can take notes here. Only yourself can access them. They will be removed when your account is removed.</h4>
 
     <hr>
-    
+
     <h3>Add Note</h3>
     <div class="form-group">
       <label for="textArea" class="col-lg-3 control-label">Note to Take</label>
@@ -36,9 +36,13 @@
                        <td> {{ note_id }} </td>
                        <td> {{ timestamp }} </td>
                        <td> {{ note }} </td>
-                       <td><a href={{act}}>Delete</a></td>
+                       <td>
+                         <form action="{{ act }}" method="post" style="display:inline;">
+                           <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                         </form>
+                       </td>
                     </tr>
-                    
+
             {% endfor %}
         </table>
     {% endif %}
@@ -66,9 +70,13 @@
                        <td> {{ image_id }} </td>
                        <td> {{ timestamp }} </td>
                        <td> {{ image_name }} </td>
-                       <td><a href={{act}}>Delete</a></td>
+                       <td>
+                         <form action="{{ act }}" method="post" style="display:inline;">
+                           <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                         </form>
+                       </td>
                     </tr>
-                    
+
             {% endfor %}
         </table>
     {% endif %}

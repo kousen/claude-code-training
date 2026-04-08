@@ -1,0 +1,16 @@
+[project]
+name = "flask-api-demo"
+version = "1.0.0"
+description = "A Flask demo application for training exercises"
+requires-python = ">=3.10"
+dependencies = [
+    "Flask>=3.0,<4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -19,16 +19,16 @@
 
         <div class="collapse navbar-collapse" id="myNavbar">
         <ul class="nav navbar-nav">
-            <li><a href="{{ url_for('FUN_root') }}">Home</a></li>
-            <li><a href="{{ url_for('FUN_public') }}">Public</a></li>
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('public') }}">Public</a></li>
             {% if session.get("current_user", None) != None %}
-	       <li><a href="{{ url_for('FUN_private') }}">Private</a></li>
+	       <li><a href="{{ url_for('private') }}">Private</a></li>
 	    {% endif%}
             {% if session.get("current_user", None) == "ADMIN" %}
-	      <li><a href="{{ url_for('FUN_admin') }}">Admin Dashboard</a></li>
+	      <li><a href="{{ url_for('admin') }}">Admin Dashboard</a></li>
 	    {% endif %}
         </ul>
-        
+
         <ul class="nav navbar-nav navbar-right">
         {% if session.get("current_user", None) == None %}
                 <form action="/login" method="post" class="navbar-form navbar-right">
@@ -43,12 +43,12 @@
         {% else %}
         <li>
               <a><b>{{ session.get("current_user") }}</b></a></li>
-              <li><a href="{{ url_for('FUN_logout') }}"><b><u>Logout</u></b></a>
+              <li><a href="{{ url_for('logout') }}"><b><u>Logout</u></b></a>
           </li>
         {% endif %}
         </ul>
         </div>
-                        
+
     </div>
     </nav>
 
@@ -64,9 +64,9 @@
 
 
 <div class="container">
-  
+
   <h1>{% block page_title %}{% endblock %}</h1>
-  
+
   <p>{% block body %}{% endblock %}</p>
 
 </div>
