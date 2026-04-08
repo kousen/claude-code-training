@@ -1,0 +1,1 @@
+- [Flask API training purpose](project_flask_api_purpose.md) -- intentionally bad code for refactoring exercises
