@@ -1,0 +1,18 @@
+{
+  "name": "lyrics-display",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "jsdom": "^29.0.2",
+    "vitest": "^4.1.3"
+  }
+}

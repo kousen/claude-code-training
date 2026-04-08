@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyrics Display</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <span class="decoration">&#9835;</span>
+        <span class="decoration">&#9833;</span>
+        <span class="decoration">&#9839;</span>
+
+        <div class="title-group">
+            <h1>Lyrics Display</h1>
+            <div class="subtitle">One line at a time</div>
+        </div>
+
+        <div class="lyric-area">
+            <div class="line-number" id="line-label">Line 1</div>
+            <div id="lyric-line">Loading lyrics...</div>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-bar"></div>
+            </div>
+            <div class="progress-labels">
+                <span id="status">Line 1 of --</span>
+                <span id="pct">0%</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="prev-btn" title="Previous line">&#9664; Prev</button>
+            <button id="play-btn" title="Auto-play lyrics">&#9654; Play</button>
+            <button id="next-btn" title="Next line">Next &#9654;</button>
+        </div>
+
+        <div class="keyboard-hint">
+            <kbd>&larr;</kbd> Previous
+            <kbd>Space</kbd> Play / Pause
+            <kbd>&rarr;</kbd> Next
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
