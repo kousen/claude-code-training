@@ -5,11 +5,18 @@ let playInterval = null;
 let transitioning = false;
 
 async function loadLyrics() {
-    const response = await fetch('lyrics.txt');
-    const text = await response.text();
-    const lines = text.split('\n').filter(line => line.trim() !== '');
-    state = createLyricsState(lines);
-    render(false);
+    try {
+        const response = await fetch('lyrics.txt');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+        if (lines.length === 0) throw new Error('No lyrics found');
+        state = createLyricsState(lines);
+        render(false);
+    } catch {
+        document.getElementById('lyric-line').textContent =
+            'Could not load lyrics.';
+    }
 }
 
 function render(animate = true) {
@@ -82,7 +89,7 @@ function togglePlay() {
     }
     state.togglePlay();
     const btn = document.getElementById('play-btn');
-    btn.innerHTML = '&#9646;&#9646; Pause';
+    btn.textContent = '\u25AE\u25AE Pause';
     btn.classList.add('playing');
     startInterval();
 }
@@ -92,7 +99,7 @@ function stopPlay() {
     playInterval = null;
     state.stop();
     const btn = document.getElementById('play-btn');
-    btn.innerHTML = '&#9654; Play';
+    btn.textContent = '\u25B6 Play';
     btn.classList.remove('playing');
 }
 
