@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyrics Display</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 18V5l12-2v13"/>
+                <circle cx="6" cy="18" r="3"/>
+                <circle cx="18" cy="16" r="3"/>
+            </svg>
+        </div>
+        <h1>Lyrics Display</h1>
+        <div class="subtitle">line by line</div>
+
+        <div class="lyrics-stage">
+            <div id="lyrics-line">Loading lyrics...</div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div id="line-counter"></div>
+
+        <div class="controls">
+            <button id="prev-btn" onclick="prev()" aria-label="Previous line">
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                Prev
+            </button>
+            <button id="play-btn" onclick="togglePlay()" aria-label="Play or pause">
+                <svg id="play-icon" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+                <span id="play-label">Play</span>
+            </button>
+            <button id="next-btn" onclick="next()" aria-label="Next line">
+                Next
+                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+        </div>
+
+        <div class="keyboard-hints">
+            <kbd>&larr;</kbd> previous &nbsp;&middot;&nbsp;
+            <kbd>Space</kbd> play/pause &nbsp;&middot;&nbsp;
+            <kbd>&rarr;</kbd> next
+        </div>
+    </div>
+
+    <script type="module">
+        import { parseLyrics, LyricsEngine } from './lyrics-engine.js';
+
+        let engine;
+        let isPlaying = false;
+        let timerId = null;
+        let direction = 'next';
+
+        const lineEl = document.getElementById('lyrics-line');
+        const counterEl = document.getElementById('line-counter');
+        const progressBar = document.getElementById('progress-bar');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const playBtn = document.getElementById('play-btn');
+        const playLabel = document.getElementById('play-label');
+        const playIcon = document.getElementById('play-icon');
+
+        async function loadLyrics() {
+            const response = await fetch('lyrics.txt');
+            const text = await response.text();
+            engine = new LyricsEngine(parseLyrics(text));
+            render(engine.state);
+        }
+
+        function render({ line, index, total, progress, isFirst, isLast }) {
+            const exitClass = direction === 'next' ? 'exit-up' : 'exit-down';
+            lineEl.classList.remove('visible');
+            lineEl.classList.add(exitClass);
+
+            setTimeout(() => {
+                lineEl.classList.remove('exit-up', 'exit-down');
+                lineEl.textContent = line;
+                requestAnimationFrame(() => lineEl.classList.add('visible'));
+            }, 300);
+
+            progressBar.style.width = (progress * 100) + '%';
+            counterEl.textContent = `${index + 1} of ${total}`;
+            prevBtn.disabled = isFirst;
+            nextBtn.disabled = isLast;
+        }
+
+        function next() {
+            const before = engine.state.index;
+            direction = 'next';
+            const state = engine.next();
+            if (state.index === before && isPlaying) {
+                stopPlay();
+            } else {
+                render(state);
+            }
+        }
+
+        function prev() {
+            direction = 'prev';
+            render(engine.prev());
+        }
+
+        function togglePlay() {
+            isPlaying ? stopPlay() : startPlay();
+        }
+
+        function startPlay() {
+            isPlaying = true;
+            playLabel.textContent = 'Pause';
+            playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+            playBtn.classList.add('playing');
+            timerId = setInterval(next, 2000);
+        }
+
+        function stopPlay() {
+            isPlaying = false;
+            clearInterval(timerId);
+            timerId = null;
+            playLabel.textContent = 'Play';
+            playIcon.innerHTML = '<path d="M5 3l14 9-14 9V3z"/>';
+            playBtn.classList.remove('playing');
+        }
+
+        // Expose to onclick handlers (module scope isn't global)
+        window.next = next;
+        window.prev = prev;
+        window.togglePlay = togglePlay;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                next();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                prev();
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                togglePlay();
+            }
+        });
+
+        loadLyrics();
+    </script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #0d0d1a;
+    color: #e0e0e0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* Subtle animated background gradient */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(120, 60, 180, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(200, 140, 60, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(60, 80, 160, 0.12) 0%, transparent 40%);
+    animation: bgShift 12s ease-in-out infinite alternate;
+    z-index: 0;
+}
+
+@keyframes bgShift {
+    0%   { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 1;   transform: scale(1.1); }
+}
+
+.container {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    width: 100%;
+    max-width: 700px;
+    padding: 3rem 2rem;
+}
+
+/* Music note icon */
+.logo {
+    margin-bottom: 1rem;
+}
+
+.logo svg {
+    width: 36px;
+    height: 36px;
+    fill: none;
+    stroke: #b8860b;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.7;
+}
+
+h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: rgba(184, 134, 11, 0.6);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.subtitle {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+}
+
+/* Lyrics display area */
+.lyrics-stage {
+    position: relative;
+    min-height: 8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+#lyrics-line {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.5;
+    color: #f5f0e8;
+    padding: 0 1rem;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+#lyrics-line.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#lyrics-line.exit-up {
+    opacity: 0;
+    transform: translateY(-12px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#lyrics-line.exit-down {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Progress bar */
+.progress-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto 0.6rem;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #b8860b, #d4a843);
+    border-radius: 1px;
+    transition: width 0.5s ease;
+    width: 0%;
+}
+
+/* Line counter */
+#line-counter {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.1em;
+    margin-bottom: 2.5rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    align-items: center;
+}
+
+button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.6rem;
+    font-size: 0.85rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: 1px solid rgba(184, 134, 11, 0.3);
+    background: rgba(184, 134, 11, 0.05);
+    color: #d4a843;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+button:hover:not(:disabled) {
+    background: rgba(184, 134, 11, 0.15);
+    border-color: rgba(184, 134, 11, 0.5);
+    transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+}
+
+#play-btn {
+    padding: 0.75rem 2rem;
+    font-size: 0.9rem;
+    border-radius: 8px;
+}
+
+#play-btn.playing {
+    background: rgba(184, 134, 11, 0.2);
+    border-color: #b8860b;
+    box-shadow: 0 0 20px rgba(184, 134, 11, 0.15);
+}
+
+/* Keyboard hint */
+.keyboard-hints {
+    margin-top: 2.5rem;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.15);
+    letter-spacing: 0.05em;
+}
+
+kbd {
+    display: inline-block;
+    padding: 0.15em 0.5em;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.9em;
+    margin: 0 0.1em;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .container {
+        padding: 2rem 1.25rem;
+    }
+
+    .lyrics-stage {
+        min-height: 6rem;
+    }
+
+    .controls {
+        gap: 0.5rem;
+    }
+
+    button {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.8rem;
+    }
+
+    #play-btn {
+        padding: 0.65rem 1.5rem;
+    }
+
+    .keyboard-hints {
+        display: none;
+    }
+}
+
+@media (max-width: 360px) {
+    button {
+        padding: 0.55rem 0.9rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .container {
+        max-width: 800px;
+    }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "lyrics-display",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lyrics-engine.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.4",
+    "vitest": "^4.1.4"
+  }
+}
