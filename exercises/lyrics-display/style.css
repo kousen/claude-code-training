@@ -1,0 +1,175 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: linear-gradient(160deg, #1e1b4b, #312e81);
+  color: #f8fafc;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app {
+  width: min(90vw, 640px);
+  text-align: center;
+  padding: 2.5rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.song-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+  margin-bottom: 2rem;
+}
+
+.stage {
+  min-height: 7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.line {
+  font-size: 1.9rem;
+  line-height: 1.4;
+  font-weight: 500;
+  transition: opacity 0.2s ease;
+}
+
+.progress-track {
+  height: 6px;
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #818cf8;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.progress {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 1.75rem;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.speed-control input[type="range"] {
+  flex: 0 1 200px;
+  accent-color: #818cf8;
+  cursor: pointer;
+}
+
+#speed-value {
+  min-width: 2.5rem;
+  text-align: left;
+  color: #cbd5e1;
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  margin-top: 1.25rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.hint kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 0.3rem;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+button {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.15rem;
+  border: 1px solid #4f46e5;
+  border-radius: 0.6rem;
+  background: #4338ca;
+  color: #f8fafc;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+button:hover {
+  background: #4f46e5;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#play-btn.playing {
+  background: #be123c;
+  border-color: #e11d48;
+}
+
+.file-loader {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.file-loader input[type="file"] {
+  font: inherit;
+  color: #cbd5e1;
+}
+
+.file-loader input[type="file"]::file-selector-button {
+  font: inherit;
+  margin-right: 0.6rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #4f46e5;
+  border-radius: 0.5rem;
+  background: #4338ca;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
+.file-loader input[type="file"]::file-selector-button:hover {
+  background: #4f46e5;
+}

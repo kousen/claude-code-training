@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyrics Display</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <h1 class="song-title" id="song-title">Lyrics Display</h1>
+
+    <section class="stage" aria-live="polite" aria-atomic="true">
+      <p class="line" id="line">Press Play or Next to begin</p>
+    </section>
+
+    <div class="progress-track" aria-hidden="true">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress" id="progress">0 / 0</div>
+
+    <div class="controls">
+      <button id="prev-btn" type="button"><span aria-hidden="true">&#9664;</span> Previous</button>
+      <button id="play-btn" type="button" aria-pressed="false"><span aria-hidden="true">&#9654;</span> Play</button>
+      <button id="next-btn" type="button">Next <span aria-hidden="true">&#9654;</span></button>
+    </div>
+
+    <div class="speed-control">
+      <label for="speed-input">Line speed</label>
+      <input type="range" id="speed-input" min="500" max="10000" step="500" />
+      <span id="speed-value" aria-hidden="true"></span>
+    </div>
+
+    <p class="hint">Keyboard: <kbd>Space</kbd> play/pause &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> <kbd>&rarr;</kbd> previous/next</p>
+
+    <div class="file-loader">
+      <label for="file-input">Load a lyrics file (.txt, one line per line)</label>
+      <input type="file" id="file-input" accept=".txt,text/plain" />
+    </div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
