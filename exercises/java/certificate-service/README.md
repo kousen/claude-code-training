@@ -40,8 +40,13 @@ This service generates professionally designed certificates of ownership for boo
 - Thymeleaf templating for web UI
 - Chart.js for analytics visualizations
 - jqwik for property-based testing
+- Playwright for cross-browser end-to-end UI tests
 
 ## Architecture
+
+For a detailed, code-grounded breakdown of the layers, the certificate-generation
+pipeline, the signing subsystem, and the analytics subsystem, see
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### High-Level System Architecture
 
@@ -496,6 +501,26 @@ Property-based testing systematically tests properties of the application with m
    http://localhost:8080/admin/dashboard
    ```
 
+### End-to-End UI Tests
+
+Browser-based UI tests live in the `e2e/` directory, built with
+[Playwright](https://playwright.dev). They exercise the three web pages — the
+landing-page certificate form, the verification page, and the analytics
+dashboard — across Chromium, Firefox, and WebKit.
+
+```bash
+cd e2e
+npm install                 # first time only
+npx playwright install      # download browser binaries (first time only)
+npm test                    # run all specs across all three browsers
+npx playwright show-report  # open the HTML report
+```
+
+The Playwright config starts the application automatically (using the `uitest`
+Spring profile — in-memory H2 with a throwaway keystore), so no separate server
+needs to be running. Dashboard tests seed data through the real
+`POST /api/certificates` endpoint. See `e2e/playwright.config.ts` for details.
+
 ## Deployment
 
 ### Heroku Deployment
@@ -511,6 +536,32 @@ The application is configured for easy Heroku deployment with PostgreSQL:
 3. **Deploy**: Standard git push to Heroku
 
 The application automatically detects the Heroku PostgreSQL `DATABASE_URL` and switches from H2 to persistent storage.
+
+## Known Limitations / Security Considerations
+
+This is a **teaching sample** used in a Claude Code training course. It is deliberately
+not hardened for production — several of the gaps below are intentional discussion
+points for exercises on security review and refactoring. If you adapt this code for
+real use, address the following first:
+
+- **No authentication layer.** Spring Security is not on the classpath. The analytics
+  dashboard (`/admin/dashboard`) and analytics API (`/api/analytics/*`) are
+  unauthenticated and expose purchaser names/emails, IP addresses, and system stats.
+  The H2 console (`/h2-console`) is also enabled in the default profile.
+- **Path traversal in stored-certificate retrieval.** `GET /api/certificates/stored/{filename}`
+  resolves the user-supplied filename without a containment check, so a crafted
+  filename can escape the storage directory.
+- **Hardcoded keystore password default.** When the `CERT_PWD` environment variable /
+  system property is unset, `KeyStoreProvider` and `PdfSigner` fall back to `changeit`.
+  Always set `CERT_PWD` outside of local development.
+- **`X-Forwarded-For` is trusted unconditionally** when recording client IPs in
+  `AnalyticsService` — a client can spoof its apparent address.
+- **Manual URL encoding.** `QrCodeGenerator.encodeUrlParam` escapes only a handful of
+  characters rather than using `URLEncoder`. Adequate for the current verification URL
+  but narrower than the standard library.
+
+SQL access is safe — all JPA `@Query` methods are parameterized — and the verification
+page relies on Thymeleaf's default `th:text` escaping for reflected query parameters.
 
 ## Notes on Digital Signatures
 

@@ -1,0 +1,1 @@
+- [Certificate-service e2e project notes](project_cert_service_e2e.md) — Architecture, selector sources, async-seeding pattern, and key design decisions for the Playwright suite

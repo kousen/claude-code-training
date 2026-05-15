@@ -1,0 +1,23 @@
+# Profile for Playwright UI tests: a real embedded server backed by an
+# in-memory H2 database (so JPA repositories work for seeding), with the
+# keystore and certificate storage redirected to throwaway build directories.
+spring:
+  datasource:
+    url: jdbc:h2:mem:uitestdb;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  h2:
+    console:
+      enabled: false
+
+server:
+  url: http://localhost
+
+certificate:
+  # KeyStoreProvider auto-generates this PKCS#12 file on first use.
+  keystore: build/uitest/keystore.p12
+  storage:
+    path: build/uitest/certificates
+  verification:
+    base-url: http://localhost

@@ -1,0 +1,14 @@
+{
+  "name": "certificate-service-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright end-to-end UI tests for the Certificate Service",
+  "scripts": {
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

@@ -49,3 +49,10 @@ out/
 *.keystore
 *.pfx
 /.claude/
+
+### Playwright (e2e) ###
+e2e/node_modules/
+e2e/playwright-report/
+e2e/test-results/
+e2e/blob-report/
+e2e/.last-run.json
