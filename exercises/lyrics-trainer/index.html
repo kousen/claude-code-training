@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lyrics Trainer</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    background: #1e1e2e;
+    color: #eee;
+  }
+  #line {
+    font-size: 2rem;
+    text-align: center;
+    max-width: 40rem;
+    min-height: 3em;
+    padding: 0 1rem;
+  }
+  #counter { color: #888; margin-bottom: 2rem; }
+  button {
+    font-size: 1.1rem;
+    padding: 0.6rem 1.4rem;
+    margin: 0 0.4rem;
+    border: none;
+    border-radius: 8px;
+    background: #7c6f9f;
+    color: white;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.4; cursor: default; }
+</style>
+</head>
+<body>
+  <p id="line">Loading…</p>
+  <p id="counter"></p>
+  <div>
+    <button id="prev">⟨ Previous</button>
+    <button id="play">▶ Play</button>
+    <button id="next">Next ⟩</button>
+  </div>
+
+<script>
+let lines = [];
+let index = 0;
+let timer = null;
+
+const lineEl = document.getElementById('line');
+const counterEl = document.getElementById('counter');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+const playBtn = document.getElementById('play');
+
+function render() {
+  lineEl.textContent = lines[index] ?? '';
+  counterEl.textContent = `${index + 1} / ${lines.length}`;
+  prevBtn.disabled = index === 0;
+  nextBtn.disabled = index === lines.length - 1;
+}
+
+function stop() {
+  clearInterval(timer);
+  timer = null;
+  playBtn.textContent = '▶ Play';
+}
+
+function tick() {
+  if (index < lines.length - 1) {
+    index++;
+    render();
+  } else {
+    stop(); // ponytail: stops at the last line; change to `index = 0` here to loop instead
+  }
+}
+
+prevBtn.onclick = () => { stop(); index--; render(); };
+nextBtn.onclick = () => { stop(); index++; render(); };
+playBtn.onclick = () => {
+  if (timer) { stop(); return; }
+  playBtn.textContent = '⏸ Pause';
+  timer = setInterval(tick, 2000);
+};
+
+fetch('lyrics.txt')
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(text => {
+    lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) throw new Error('empty file');
+    render();
+  })
+  .catch(() => { lineEl.textContent = 'Could not load lyrics.txt — serve this folder over HTTP.'; });
+</script>
+</body>
+</html>
