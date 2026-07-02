@@ -5,63 +5,221 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lyrics Trainer</title>
 <style>
+  :root {
+    --bg: #0a0a14;
+    --card: #14142280;
+    --border: #2b2b45;
+    --text: #f0eef8;
+    --muted: #9a95b8;
+    --grad: linear-gradient(135deg, #8b5cf6, #ec4899);
+    --glow: rgba(139, 92, 246, 0.35);
+  }
+  * { box-sizing: border-box; }
+
   body {
-    font-family: system-ui, sans-serif;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
     margin: 0;
-    background: #1e1e2e;
-    color: #eee;
+    color: var(--text);
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 0%, rgba(139, 92, 246, 0.18), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(236, 72, 153, 0.14), transparent),
+      var(--bg);
   }
-  #line {
-    font-size: 2rem;
+
+  .card {
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 60px var(--glow);
+    padding: clamp(1.75rem, 5vw, 3rem);
+    width: min(44rem, calc(100vw - 2rem));
     text-align: center;
-    max-width: 40rem;
-    min-height: 3em;
-    padding: 0 1rem;
   }
-  #counter { color: #888; margin-bottom: 2rem; }
+
+  h1 {
+    margin: 0 0 2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1::before { content: "♪ "; letter-spacing: 0; }
+  h1::after  { content: " ♪"; letter-spacing: 0; }
+
+  #lineno {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #c4b5fd;
+    background: rgba(139, 92, 246, 0.14);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 999px;
+    padding: 0.3rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  /* Lyrics get a serif voice; UI stays sans — the contrast is the typography */
+  #line {
+    font-family: "New York", "Palatino", "Palatino Linotype", Georgia, serif;
+    font-size: clamp(1.35rem, 4.5vw, 2.1rem);
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    min-height: 4.35em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 1.5rem;
+  }
+  #line.animate { animation: rise 0.35s ease-out; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  #bar-track {
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+  }
+  #bar {
+    height: 100%;
+    width: 0;
+    background: var(--grad);
+    border-radius: 3px;
+    transition: width 0.35s ease;
+  }
+
+  #counter {
+    color: var(--muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    margin: 0 0 2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .controls { display: flex; justify-content: center; gap: 0.75rem; }
   button {
-    font-size: 1.1rem;
-    padding: 0.6rem 1.4rem;
-    margin: 0 0.4rem;
-    border: none;
-    border-radius: 8px;
-    background: #7c6f9f;
-    color: white;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.7rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #1d1d30;
+    color: var(--text);
     cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
   }
-  button:disabled { opacity: 0.4; cursor: default; }
+  button:hover:not(:disabled) { background: #27273f; }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  #play {
+    background: var(--grad);
+    border: none;
+    color: #fff;
+    min-width: 7.5rem;
+    box-shadow: 0 4px 20px var(--glow);
+  }
+  #play:hover { box-shadow: 0 4px 28px rgba(236, 72, 153, 0.45); }
+  button:disabled { opacity: 0.35; cursor: default; }
+
+  .delay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .delay input {
+    width: 10rem;
+    accent-color: #8b5cf6;
+  }
+  #delayval {
+    font-variant-numeric: tabular-nums;
+    min-width: 2.5em;
+    text-align: left;
+    color: var(--text);
+  }
+  .hint {
+    margin: 1.25rem 0 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  @media (max-width: 480px) {
+    .controls { flex-wrap: wrap; }
+    button { flex: 1 1 40%; padding: 0.8rem 0.5rem; }
+    #play { flex-basis: 100%; order: -1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #line.animate { animation: none; }
+    #bar, button { transition: none; }
+  }
 </style>
 </head>
 <body>
-  <p id="line">Loading…</p>
-  <p id="counter"></p>
-  <div>
-    <button id="prev">⟨ Previous</button>
-    <button id="play">▶ Play</button>
-    <button id="next">Next ⟩</button>
-  </div>
+  <main class="card">
+    <h1>Lyrics Trainer</h1>
+    <span id="lineno"></span>
+    <p id="line">Loading…</p>
+    <div id="bar-track"><div id="bar"></div></div>
+    <p id="counter"></p>
+    <div class="controls">
+      <button id="prev">⟨ Previous</button>
+      <button id="play">▶ Play</button>
+      <button id="next">Next ⟩</button>
+    </div>
+    <label class="delay">
+      Delay
+      <input type="range" id="delay" min="0.5" max="5" step="0.5" value="2">
+      <span id="delayval">2.0s</span>
+    </label>
+    <p class="hint">Space play/pause &nbsp;·&nbsp; ← → previous/next</p>
+  </main>
 
-<script>
+<script type="module">
+import {
+  parseLyrics, canGoPrev, canGoNext, lineLabel,
+  counterLabel, progressPercent, secondsToMs, formatDelay,
+} from './lyrics-logic.js';
+
 let lines = [];
 let index = 0;
 let timer = null;
+let delayMs = 2000;
 
 const lineEl = document.getElementById('line');
+const linenoEl = document.getElementById('lineno');
 const counterEl = document.getElementById('counter');
+const barEl = document.getElementById('bar');
 const prevBtn = document.getElementById('prev');
 const nextBtn = document.getElementById('next');
 const playBtn = document.getElementById('play');
 
 function render() {
+  lineEl.classList.remove('animate');
+  void lineEl.offsetWidth; // reflow so the animation restarts on every line change
   lineEl.textContent = lines[index] ?? '';
-  counterEl.textContent = `${index + 1} / ${lines.length}`;
-  prevBtn.disabled = index === 0;
-  nextBtn.disabled = index === lines.length - 1;
+  lineEl.classList.add('animate');
+  linenoEl.textContent = lineLabel(index);
+  counterEl.textContent = counterLabel(index, lines.length);
+  barEl.style.width = `${progressPercent(index, lines.length)}%`;
+  prevBtn.disabled = !canGoPrev(index);
+  nextBtn.disabled = !canGoNext(index, lines.length);
 }
 
 function stop() {
@@ -71,7 +229,7 @@ function stop() {
 }
 
 function tick() {
-  if (index < lines.length - 1) {
+  if (canGoNext(index, lines.length)) {
     index++;
     render();
   } else {
@@ -79,18 +237,37 @@ function tick() {
   }
 }
 
-prevBtn.onclick = () => { stop(); index--; render(); };
-nextBtn.onclick = () => { stop(); index++; render(); };
-playBtn.onclick = () => {
+function prev() { if (canGoPrev(index)) { stop(); index--; render(); } }
+function next() { if (canGoNext(index, lines.length)) { stop(); index++; render(); } }
+function togglePlay() {
   if (timer) { stop(); return; }
   playBtn.textContent = '⏸ Pause';
-  timer = setInterval(tick, 2000);
+  timer = setInterval(tick, delayMs);
+}
+
+prevBtn.onclick = prev;
+nextBtn.onclick = next;
+playBtn.onclick = togglePlay;
+
+const delayEl = document.getElementById('delay');
+const delayValEl = document.getElementById('delayval');
+delayEl.oninput = () => {
+  delayMs = secondsToMs(delayEl.value);
+  delayValEl.textContent = formatDelay(delayEl.value);
+  if (timer) { clearInterval(timer); timer = setInterval(tick, delayMs); }
 };
+
+document.addEventListener('keydown', (e) => {
+  if (e.target === delayEl) return; // arrows should adjust the slider, not navigate
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  else if (e.code === 'ArrowRight') next();
+  else if (e.code === 'ArrowLeft') prev();
+});
 
 fetch('lyrics.txt')
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(text => {
-    lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    lines = parseLyrics(text);
     if (!lines.length) throw new Error('empty file');
     render();
   })
