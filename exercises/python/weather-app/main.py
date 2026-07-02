@@ -18,6 +18,11 @@ app = Flask(__name__)
 # Display home page and get city name entered into search form
 @app.route("/", methods=["GET", "POST"])
 def home():
+    """Render the home page and handle city searches.
+
+    On GET, display the search form. On POST, read the submitted city
+    name and redirect to the weather page for that city.
+    """
     if request.method == "POST":
         city = request.form.get("search")
         return redirect(url_for("get_weather", city=city))
@@ -27,6 +32,16 @@ def home():
 # Display weather forecast for specific city using data from OpenWeather API
 @app.route("/<city>", methods=["GET", "POST"])
 def get_weather(city):
+    """Fetch and display the weather forecast for a city.
+
+    Look up the city's coordinates via the OpenWeather geocoding API, then
+    retrieve current conditions and a five-day forecast to render on the
+    city page.
+
+    :param city: City name taken from the URL path.
+    :returns: The rendered city weather page, or a redirect to the error
+        page if the city name cannot be geocoded.
+    """
     # Format city name and get current date to display on page
     city_name = string.capwords(city)
     today = datetime.datetime.now()
@@ -90,6 +105,7 @@ def get_weather(city):
 # Display error page for invalid input
 @app.route("/error")
 def error():
+    """Render the error page shown for invalid or unrecognized city input."""
     return render_template("error.html")
 
 
