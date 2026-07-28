@@ -7,6 +7,7 @@ on:
       - 'slides.md'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/build-slides-pdf.yml'
   workflow_dispatch:
 
@@ -21,15 +22,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
-          version: 10
+          version: 11
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -40,8 +41,15 @@ jobs:
       - name: Export slides to PDF
         run: pnpm export
 
+      - name: Verify PDF was produced
+        # Fail loudly: action-gh-release only warns on a missing file, so without
+        # this a renamed/missing export would publish a release with no asset.
+        run: |
+          test -s slides-export.pdf \
+            || { echo "::error::slides-export.pdf is missing or empty — export failed or the output name changed"; exit 1; }
+
       - name: Publish rolling "latest" release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: slides-latest
           name: Latest slides PDF

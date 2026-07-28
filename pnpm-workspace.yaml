@@ -1,3 +1,20 @@
+# slidev-component-progress pins @slidev/client 0.48.x, which drags in an old
+# unhead plus a twoslash/minimatch chain that pnpm audit flags. Force it onto
+# the client version @slidev/cli already resolves. Keep the catalog entry in
+# step with the @slidev/cli range in package.json.
+catalog:
+  "@slidev/client": "^51.8.1"
+
+overrides:
+  "slidev-component-progress>@slidev/client": "catalog:"
+
+# Chromium is installed explicitly by the workflow, so no postinstall downloads.
+allowBuilds:
+  esbuild: false
+  playwright-chromium: false
+  vue-demi: false
+
 ignoredBuiltDependencies:
   - esbuild
   - playwright-chromium
+  - vue-demi
