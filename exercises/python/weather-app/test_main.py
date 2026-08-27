@@ -5,6 +5,7 @@ mocked. Each test hands ``fake_get`` a list of canned responses in the order the
 app makes calls: geocoding, current weather, forecast.
 """
 import datetime
+import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -14,6 +15,12 @@ import main
 
 
 # --- Fixtures ---------------------------------------------------------------
+
+def assert_redirects_to(response, path):
+    """Flask 3.2 changes redirect() from 302 to 303; accept either."""
+    assert 300 <= response.status_code < 400, response.status_code
+    assert response.headers["Location"].endswith(path), response.headers["Location"]
+
 
 @pytest.fixture
 def client():
@@ -104,8 +111,7 @@ def test_state_code_that_is_also_a_country_code_is_not_rewritten(mock_get, clien
 def test_unknown_city_state_retries_once_then_errors(mock_get, client):
     mock_get.return_value = fake_response([])
     r = client.get("/weather/Nowhere, IL")
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/error")
+    assert_redirects_to(r, "/error")
     assert mock_get.call_count == 2   # typed form + US retry, no weather calls
 
 
@@ -144,8 +150,7 @@ def test_home_get_renders_search_form(client):
 
 def test_home_post_redirects_to_weather_page(client):
     r = client.post("/", data={"search": "London"})
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/weather/London")
+    assert_redirects_to(r, "/weather/London")
 
 
 @patch("main.requests.get")
@@ -154,6 +159,12 @@ def test_search_with_comma_survives_redirect(mock_get, client):
     r = client.post("/", data={"search": "Springfield, IL"}, follow_redirects=True)
     assert r.status_code == 200
     assert mock_get.call_args_list[0].kwargs["params"]["q"] == "Springfield, IL"
+
+
+def test_home_post_with_empty_search_returns_home(client):
+    for data in ({}, {"search": ""}, {"search": "   "}):
+        r = client.post("/", data=data)
+        assert_redirects_to(r, "/")
 
 
 # --- Weather page: happy path ------------------------------------------------
@@ -169,7 +180,8 @@ def test_weather_page_renders_current_and_forecast(mock_get, client):
     assert r.status_code == 200
     html = r.data.decode()
     assert "<h1> Paris </h1>" in html   # heading from geocoder name, not raw 'paris'
-    assert "21" in html                 # rounded current temp
+    assert "21ºC" in html               # rounded current temp with unit
+    assert "19° - 24°" in html          # min/max rounded
     assert "Clouds" in html
     # Forecast conditions render as icon filenames; template shows days 1-4 (today uses current weather)
     icons = [line for line in html.splitlines() if 'class="weather-icon"' in line]
@@ -223,8 +235,7 @@ def test_forecast_after_noon_still_renders_four_days(mock_get, client):
 def test_unknown_city_redirects_to_error(mock_get, client):
     mock_get.return_value = fake_response([])  # geocoder found nothing
     r = client.get("/weather/Xyzzyqq")
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/error")
+    assert_redirects_to(r, "/error")
     assert mock_get.call_count == 1  # no weather calls made
 
 
@@ -232,24 +243,21 @@ def test_unknown_city_redirects_to_error(mock_get, client):
 def test_bad_api_key_redirects_to_api_error(mock_get, client):
     mock_get.return_value = fake_response({"cod": 401, "message": "Invalid API key"}, status=401)
     r = client.get("/weather/Paris")
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/error?reason=api")
+    assert_redirects_to(r, "/error?reason=api")
 
 
 @patch("main.requests.get")
 def test_network_failure_redirects_to_api_error(mock_get, client):
     mock_get.side_effect = requests.ConnectionError("DNS failure")
     r = client.get("/weather/Paris")
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/error?reason=api")
+    assert_redirects_to(r, "/error?reason=api")
 
 
 @patch("main.requests.get")
 def test_timeout_redirects_to_api_error(mock_get, client):
     mock_get.side_effect = requests.Timeout("read timed out")
     r = client.get("/weather/Paris")
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/error?reason=api")
+    assert_redirects_to(r, "/error?reason=api")
 
 
 @patch("main.requests.get")
@@ -260,8 +268,53 @@ def test_forecast_failure_after_good_geocode_redirects(mock_get, client):
         fake_response({"cod": "500"}, status=500),
     ]
     r = client.get("/weather/Paris")
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/error?reason=api")
+    assert_redirects_to(r, "/error?reason=api")
+
+
+@patch("main.requests.get")
+def test_malformed_forecast_entry_redirects_to_api_error(mock_get, client):
+    bad = {"list": [{"dt_txt": "garbage 12:00:00", "main": {"temp": 1}, "weather": [{"main": "Clear"}]}]}
+    mock_get.side_effect = [fake_response(GEOCODE_OK), fake_response(WEATHER_OK), fake_response(bad)]
+    r = client.get("/weather/Paris")
+    assert_redirects_to(r, "/error?reason=api")
+
+
+@patch("main.requests.get")
+def test_weather_payload_missing_keys_redirects_to_api_error(mock_get, client):
+    mock_get.side_effect = [fake_response(GEOCODE_OK), fake_response({"cod": 200}), fake_response(forecast_ok())]
+    r = client.get("/weather/Paris")
+    assert_redirects_to(r, "/error?reason=api")
+
+
+@patch("main.requests.get")
+def test_forecast_with_no_noon_entries_renders_today_only(mock_get, client):
+    f = forecast_ok()
+    f["list"] = [i for i in f["list"] if "12:00:00" not in i["dt_txt"]]
+    mock_get.side_effect = [fake_response(GEOCODE_OK), fake_response(WEATHER_OK), fake_response(f)]
+    r = client.get("/weather/Paris")
+    assert r.status_code == 200
+    assert r.data.decode().count('class="forecast-item"') == 1
+
+
+@patch("main.requests.get")
+def test_geocode_result_without_name_or_country(mock_get, client):
+    mock_get.side_effect = [fake_response([{"lat": 1.0, "lon": 2.0}]), fake_response(WEATHER_OK), fake_response(forecast_ok())]
+    r = client.get("/weather/somewhere")
+    html = r.data.decode()
+    assert "<h1> somewhere </h1>" in html          # falls back to the raw query
+    assert mock_get.call_args_list[1].args[1]["units"] == "metric"
+
+
+@patch("main.requests.get")
+def test_api_failure_log_names_query_and_cause_but_not_key(mock_get, client, caplog):
+    err = requests.HTTPError("401 Client Error: Unauthorized for url: https://x/geo?q=Paris&appid=SECRETKEY")
+    err.response = MagicMock(status_code=401)
+    mock_get.side_effect = err
+    with caplog.at_level(logging.ERROR, logger=main.app.logger.name):
+        client.get("/weather/Paris")
+    assert "'Paris'" in caplog.text
+    assert "HTTPError 401" in caplog.text
+    assert "SECRETKEY" not in caplog.text
 
 
 # --- Error page --------------------------------------------------------------

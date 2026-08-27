@@ -1,5 +1,7 @@
 # Weather App Exercise
 
+> **Status (branch `cc_aug2026`):** the task descriptions below describe the project's *original* starting point. On this branch, Tasks 2–4 have already been completed — `test_main.py` (29 mocked tests, ~99% coverage, 80% gate in `pytest.ini`), error handling in `main.py` (timeouts, `raise_for_status()`, a `/error?reason=api` page, logging), and documentation (`README.md`, `CLAUDE.md`, docstrings). Task 1 (exploration) still works as written. Instructors may reset the branch to the pre-exercise state; the tasks are kept intact for that purpose. If you're starting from this branch, treat the completed work as something to review and extend (see Bonus Challenges) rather than build from scratch.
+
 ## Overview
 This is a simple Python weather application that fetches weather data from an API. The code works but has several areas for improvement using Claude Code.
 

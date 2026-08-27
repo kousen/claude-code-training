@@ -4,7 +4,8 @@ Request flow for /weather/<city>:
     1. geocode()  — city name -> lat/lon via the Geocoding API (with a US
                     'City, ST' retry, see us_state_query)
     2. current weather  (data/2.5/weather)
-    3. 5-day forecast   (data/2.5/forecast, filtered to the 12:00 entry per day)
+    3. 5-day forecast   (data/2.5/forecast, filtered to the 12:00 UTC entry for
+                        each future day, capped at four)
 
 US locations are requested in imperial units (°F, mph); everything else in
 metric (°C, m/s). Configuration is a single environment variable, OWM_API_KEY,
@@ -20,7 +21,7 @@ load_dotenv()
 
 OWM_ENDPOINT = "https://api.openweathermap.org/data/2.5/weather"
 OWM_FORECAST_ENDPOINT = "https://api.openweathermap.org/data/2.5/forecast"
-GEOCODING_API_ENDPOINT = "http://api.openweathermap.org/geo/1.0/direct"
+GEOCODING_API_ENDPOINT = "https://api.openweathermap.org/geo/1.0/direct"
 api_key = os.getenv("OWM_API_KEY")
 # api_key = os.environ.get("OWM_API_KEY")
 
@@ -62,8 +63,10 @@ def us_state_query(query):
 
 
 def geocode(query):
-    """Return the geocoder's result list for query, retrying with the US-state
-    expansion if the query as typed matches nothing."""
+    """Return the geocoder's result list for query, retrying at most once with
+    the US-state expansion if the query as typed matches nothing (and
+    us_state_query recognizes it). Raises requests.HTTPError on a non-2xx
+    response from either call."""
     params = {"q": query, "appid": api_key, "limit": 3}
     response = requests.get(GEOCODING_API_ENDPOINT, params=params, timeout=API_TIMEOUT)
     response.raise_for_status()
@@ -82,7 +85,9 @@ def home():
     with whatever the user typed (routing is by endpoint name, so the raw text
     is preserved in the URL for get_weather to interpret)."""
     if request.method == "POST":
-        city = request.form.get("search")
+        city = (request.form.get("search") or "").strip()
+        if not city:
+            return redirect(url_for("home"))
         return redirect(url_for("get_weather", city=city))
     return render_template("index.html")
 
@@ -132,30 +137,36 @@ def get_weather(city):
         forecast_response = requests.get(OWM_FORECAST_ENDPOINT, weather_params, timeout=API_TIMEOUT)
         forecast_response.raise_for_status()
         forecast_data = forecast_response.json()
+        # Get current weather data
+        current_temp = round(weather_data['main']['temp'])
+        current_weather = weather_data['weather'][0]['main']
+        min_temp = round(weather_data['main']['temp_min'])
+        max_temp = round(weather_data['main']['temp_max'])
+        wind_speed = weather_data['wind']['speed']
+
+        # Noon forecast for the next four days. Derive the day label from each entry's own
+        # date so labels and data can't drift apart (today's noon entry is absent after 12:00 UTC).
+        today_str = today.strftime("%Y-%m-%d")
+        forecast = [
+            {
+                "day": datetime.datetime.strptime(item["dt_txt"], "%Y-%m-%d %H:%M:%S").strftime("%a"),
+                "temp": round(item["main"]["temp"]),
+                "weather": item["weather"][0]["main"],
+            }
+            for item in forecast_data["list"]
+            if item["dt_txt"].endswith("12:00:00") and not item["dt_txt"].startswith(today_str)
+        ][:4]
+
     except requests.RequestException as e:
-        # Covers connection errors, timeouts, and non-2xx responses (e.g. 401 for a bad API key)
-        app.logger.error("OpenWeather request failed for %r: %s", city, e)
+        # Connection errors, timeouts, non-2xx (e.g. 401 for a bad key). Log the type and
+        # status only: str(e) includes the request URL, and with it the API key.
+        status = getattr(getattr(e, "response", None), "status_code", None)
+        app.logger.error("OpenWeather request failed for %r: %s %s", city, type(e).__name__, status or "")
         return redirect(url_for("error", reason="api"))
-
-    # Get current weather data
-    current_temp = round(weather_data['main']['temp'])
-    current_weather = weather_data['weather'][0]['main']
-    min_temp = round(weather_data['main']['temp_min'])
-    max_temp = round(weather_data['main']['temp_max'])
-    wind_speed = weather_data['wind']['speed']
-
-    # Noon forecast for the next four days. Derive the day label from each entry's own
-    # date so labels and data can't drift apart (today's noon entry is absent after 12:00 UTC).
-    today_str = today.strftime("%Y-%m-%d")
-    forecast = [
-        {
-            "day": datetime.datetime.strptime(item["dt_txt"], "%Y-%m-%d %H:%M:%S").strftime("%a"),
-            "temp": round(item["main"]["temp"]),
-            "weather": item["weather"][0]["main"],
-        }
-        for item in forecast_data["list"]
-        if item["dt_txt"].endswith("12:00:00") and not item["dt_txt"].startswith(today_str)
-    ][:4]
+    except (LookupError, TypeError, ValueError) as e:
+        # Response parsed as JSON but didn't have the shape we expect
+        app.logger.error("Unexpected OpenWeather payload for %r: %s: %s", city, type(e).__name__, e)
+        return redirect(url_for("error", reason="api"))
 
     return render_template("city.html", city_name=city_name, current_date=current_date, current_temp=current_temp,
                            current_weather=current_weather, min_temp=min_temp, max_temp=max_temp, wind_speed=wind_speed,

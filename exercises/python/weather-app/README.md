@@ -4,7 +4,7 @@ A small Flask web app that shows current conditions and a five-day forecast for 
 
 ## Quick start
 
-Requires Python 3.11+ and a free OpenWeather API key.
+Requires Python 3.9+ (the code uses the dict `|` merge operator; tested on 3.11.9) and a free OpenWeather API key.
 
 ```bash
 python -m venv .venv
@@ -15,6 +15,8 @@ python main.py
 ```
 
 Open <http://127.0.0.1:5000>, type a city, and submit. `main.py` runs Flask in debug mode with auto-reload; for production use the Procfile's `gunicorn main:app`.
+
+If you see `Address already in use`, something else holds port 5000 (on macOS the AirPlay Receiver often does). Start on another port instead: `python -m flask --app main run --port 5055`.
 
 ## Usage
 
@@ -34,7 +36,7 @@ Search from the home page, or go straight to `/weather/<city>`. Accepted forms:
 
 ## How it works
 
-Everything lives in `main.py` (~150 lines), three routes:
+Everything lives in `main.py` (~180 lines), three routes:
 
 | Route | Purpose |
 |---|---|
@@ -46,9 +48,9 @@ Request flow for `/weather/<city>`:
 
 1. **`geocode(query)`** calls `geo/1.0/direct` with the input as typed. If that returns nothing and the input looks like `City, ST` for a US state (`us_state_query`), it retries once as `City,ST,US`. Trying as-typed first matters because many state codes are also ISO country codes (`CA`, `DE`, `IN`, `GA`…).
 2. The first result's `country` selects `units=imperial` or `metric`; its `name`/`state` become the page heading.
-3. `data/2.5/weather` and `data/2.5/forecast` are called with the coordinates. Forecast entries are filtered to the `12:00:00` slot for each *future* day — today's noon slot disappears from the API after 12:00 UTC, so labels are derived from each entry's own date rather than counted from today.
+3. `data/2.5/weather` and `data/2.5/forecast` are called with the coordinates. Forecast entries are filtered to the `12:00:00` slot for each *future* day (today's date is excluded) and capped at four — today's noon slot disappears from the API after 12:00 UTC, so labels are derived from each entry's own date rather than counted from today.
 
-All three HTTP calls have a 10-second timeout and `raise_for_status()`; any `requests.RequestException` (bad key, network down, timeout, 5xx) is logged with the query and redirected to `/error?reason=api`.
+Every OpenWeather call (three, or four when the US-state retry fires) has a 10-second timeout (`API_TIMEOUT`) and `raise_for_status()`. An empty geocoder result redirects to `/error` (the "city does not exist" message); any `requests.RequestException` (bad key, network down, timeout, 5xx) is logged with the query and redirected to `/error?reason=api`.
 
 Stray root paths (`/favicon.ico`, `/robots.txt`) 404 at the router — they never reach the API. Pages declare a PNG favicon from `static/assets/`.
 
@@ -59,6 +61,20 @@ Stray root paths (`/favicon.ico`, `/robots.txt`) 404 at the router — they neve
 | `OWM_API_KEY` | yes | OpenWeather API key. Read from the environment or `.env` via python-dotenv. A missing or invalid key surfaces as the service-unavailable error page with a `401` in the log. |
 
 `.env` is gitignored. `API_TIMEOUT` (seconds) is a constant in `main.py`.
+
+**Dependency pins are stale.** `requirements.txt` pins `Flask~=2.1.2`, `Werkzeug==2.0.2`, `gunicorn==20.1.0`, `requests~=2.28.0`, and `python-dotenv~=0.20.0` (plus ~40 Jupyter-related packages the app never imports). The versions the app and test suite were actually verified against are:
+
+| Package | Tested version |
+|---|---|
+| Flask | 3.0.3 |
+| Werkzeug | 3.0.3 |
+| requests | 2.32.3 |
+| python-dotenv | 1.0.1 |
+| gunicorn | 23.0.0 |
+| pytest | 9.1.1 |
+| pytest-cov | 7.1.0 |
+
+A cleanup of `requirements.txt` is pending. Until then, `pip install -r requirements.txt` installs the older pinned versions; the app is expected to run on either set, but the tested combination is the one above.
 
 ## Testing
 
@@ -91,7 +107,7 @@ Weather icons are looked up as `static/assets/<condition>.png` using the lowerca
 - Ambiguous names (`Springfield`, `Portland`) show whichever result OpenWeather ranks first; there is no chooser. Add the state to disambiguate.
 - US territories (`PR`, `GU`, `VI`) geocode with their own country codes and get metric units.
 - Min/max and forecast temperatures print a bare degree sign without the unit letter.
-- `requirements.txt` still carries Jupyter-related pins from the original project that the app does not use.
+- `requirements.txt` still carries Jupyter-related pins from the original project that the app does not use, and its Flask/requests pins lag the tested versions (see [Configuration](#configuration)).
 
 ## Origins
 
