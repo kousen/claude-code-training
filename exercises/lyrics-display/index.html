@@ -3,114 +3,122 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lyrics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=EB+Garamond:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    color-scheme: dark;
-    --bg1: #0f0a1e; --bg2: #2a1042; --card: rgba(255,255,255,.06); --border: rgba(255,255,255,.12);
-    --fg: #f5f0ff; --muted: #b8a9d9; --accent: #c084fc; --accent2: #f472b6;
-  }
+  :root { --bg: #f4efe4; --fg: #1f1b16; --muted: #7a705f; --accent: #8a2b1e; --rule: #d8cfbc; --display: "Cormorant Garamond", Georgia, serif; }
   * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 1rem;
-    font-family: Inter, system-ui, sans-serif; color: var(--fg);
-    background: radial-gradient(ellipse at 20% 0%, #4c1d95 0%, transparent 55%),
-                radial-gradient(ellipse at 80% 100%, #831843 0%, transparent 55%),
-                linear-gradient(160deg, var(--bg1), var(--bg2));
-    background-attachment: fixed;
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font-family: "EB Garamond", Georgia, serif; font-size: 16px; }
+  main { min-height: 100vh; display: grid; grid-template-columns: 140px minmax(0, 1fr); }
+
+  aside { border-right: 1px solid var(--rule); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 40px 0; text-align: center; }
+  #title { font-family: var(--display); font-size: 14px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); writing-mode: vertical-rl; transform: rotate(180deg); margin: 0; font-weight: 500; }
+  #num { font-family: var(--display); font-size: 112px; font-weight: 500; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+  #of { font-size: 14px; color: var(--muted); }
+
+  section { display: flex; flex-direction: column; justify-content: space-between; padding: 40px clamp(20px, 6vw, 56px); gap: 32px; }
+  .settings { display: flex; justify-content: flex-end; gap: 24px; font-size: 14px; color: var(--muted); flex-wrap: wrap; }
+  .settings label { display: flex; align-items: center; gap: 6px; }
+  .settings select, .settings input { font: inherit; color: var(--fg); background: none; border: 0; border-bottom: 1px dotted var(--muted); padding: 0; cursor: pointer; }
+  .settings input[type=range] { width: 110px; accent-color: var(--accent); border: 0; }
+  #speedVal { color: var(--fg); font-variant-numeric: tabular-nums; }
+
+  .stage { display: flex; flex-direction: column; gap: 20px; }
+  #line { font-family: var(--display); font-style: italic; font-size: clamp(30px, 5vw, 48px); font-weight: 500; line-height: 1.25; text-wrap: balance; margin: 0; min-height: 2.5em; cursor: pointer; transition: opacity .25s ease, transform .25s ease; }
+  #line.out { opacity: 0; transform: translateY(6px); }
+  .blank { display: inline-block; border-bottom: 2px solid var(--accent); vertical-align: -.1em; height: 1em; }
+  .hint { font-size: 15px; color: var(--muted); margin: 0; }
+  .hint kbd { font-family: var(--display); font-weight: 600; font-size: 1.05em; color: var(--fg); }
+
+  .controls { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--rule); padding-top: 24px; gap: 16px; }
+  .nav { display: flex; gap: 32px; }
+  button { font: inherit; background: none; border: 0; padding: 0; color: var(--fg); cursor: pointer; display: flex; align-items: center; gap: 8px; min-height: 44px; }
+  button:hover { color: var(--accent); }
+  button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  #play { padding: 0 26px; border: 1.5px solid var(--fg); letter-spacing: .04em; gap: 10px; }
+  #play:hover { border-color: var(--accent); }
+  #play svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+  #play.on { background: var(--fg); color: var(--bg); }
+  #play.on:hover { background: var(--accent); border-color: var(--accent); }
+
+  @media (max-width: 640px) {
+    main { grid-template-columns: 1fr; }
+    aside { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--rule); padding: 20px 24px; }
+    #title { writing-mode: horizontal-tb; transform: none; }
+    #num { font-size: 56px; }
+    .controls { flex-direction: column; align-items: stretch; }
+    .nav { justify-content: space-between; }
+    #play { justify-content: center; }
   }
-  .card {
-    width: min(100%, 620px); padding: clamp(1.5rem, 5vw, 3rem) clamp(1.25rem, 5vw, 2.5rem);
-    background: var(--card); border: 1px solid var(--border); border-radius: 24px;
-    backdrop-filter: blur(20px); box-shadow: 0 25px 60px rgba(0,0,0,.45); text-align: center;
-  }
-  h1 { font: 500 .8rem/1 Inter, sans-serif; letter-spacing: .25em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.5rem; }
-  h2 { font: 600 1rem/1.2 Inter, sans-serif; letter-spacing: .02em; margin: -1rem 0 1.5rem; color: var(--fg); }
-  h1::before { content: "♪ "; color: var(--accent); }
-  #line {
-    font-family: "Playfair Display", Georgia, serif; font-size: clamp(1.4rem, 4.5vw, 2.25rem); font-style: italic; line-height: 1.35;
-    min-height: 6rem; display: grid; place-items: center; margin: 0 0 1.25rem; text-wrap: balance;
-    transition: opacity .25s ease, transform .25s ease;
-  }
-  #line.out { opacity: 0; transform: translateY(8px); }
-  #progress { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; margin: 0 0 .6rem; }
-  .bar { height: 4px; background: rgba(255,255,255,.12); border-radius: 2px; overflow: hidden; margin-bottom: 1.75rem; }
-  .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s ease; }
-  .controls { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
-  button {
-    font: 500 .95rem Inter, sans-serif; padding: .7rem 1.4rem; border-radius: 999px; cursor: pointer;
-    border: 1px solid var(--border); background: rgba(255,255,255,.08); color: var(--fg);
-    transition: background .2s, transform .1s;
-  }
-  button:hover:not(:disabled) { background: rgba(255,255,255,.16); }
-  button:active:not(:disabled) { transform: scale(.97); }
-  button:disabled { opacity: .35; cursor: default; }
-  #play { min-width: 7rem; border: 0; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #1a0a2e; font-weight: 600; }
-  #play:hover { filter: brightness(1.1); }
-  .speed { display: flex; align-items: center; justify-content: center; gap: .6rem; margin-top: 1.5rem; font-size: .85rem; color: var(--muted); }
-  .speed input { width: min(50%, 200px); accent-color: var(--accent); }
-  #speedVal { font-variant-numeric: tabular-nums; min-width: 2.5rem; text-align: left; }
-  select { font: inherit; color: var(--fg); background: rgba(255,255,255,.08); border: 1px solid var(--border); border-radius: 8px; padding: .3rem .5rem; }
-  select option { color: #1a0a2e; }
-  #line { cursor: pointer; }
-  @media (prefers-reduced-motion: reduce) { #line, .bar > div, button { transition: none; } }
-  .hint { color: var(--muted); font-size: .75rem; margin: 1.5rem 0 0; }
-  kbd { font: inherit; padding: .1rem .4rem; margin: 0 .1rem; border: 1px solid var(--border); border-radius: 4px; background: rgba(255,255,255,.06); }
-  @media (max-width: 420px) { .controls button { flex: 1 1 100%; } #play { order: -1; } }
+  @media (prefers-reduced-motion: reduce) { #line { transition: none; } }
 </style>
-<main class="card">
-  <h1>Now Playing</h1>
-  <h2 id="title" hidden></h2>
-  <p id="line" aria-live="polite" title="Click or press R to reveal">Loading…</p>
-  <p id="progress"></p>
-  <div class="bar"><div id="fill"></div></div>
-  <div class="controls">
-    <button id="prev">‹ Previous</button>
-    <button id="play">Play</button>
-    <button id="next">Next ›</button>
-  </div>
-  <label class="speed">Speed <input id="speed" type="range" min="0.5" max="5" step="0.5" value="2"> <span id="speedVal">2.0s</span></label>
-  <label class="speed">Recall
-    <select id="mode">
-      <option value="0">Show everything</option>
-      <option value="1">Hide every other word</option>
-      <option value="2">First word only</option>
-      <option value="3">Hide all</option>
-    </select>
-  </label>
-  <p class="hint"><kbd>←</kbd><kbd>→</kbd> navigate &nbsp; <kbd>Space</kbd> play/pause &nbsp; <kbd>R</kbd> reveal &nbsp; <kbd>⌘←</kbd><kbd>⌘→</kbd> or <kbd>Fn←</kbd><kbd>Fn→</kbd> first/last</p>
+<main>
+  <aside>
+    <h1 id="title">Lyrics</h1>
+    <div id="num">–</div>
+    <div id="of"></div>
+  </aside>
+  <section>
+    <div class="settings">
+      <label>Speed <input id="speed" type="range" min="0.5" max="5" step="0.5" value="2"> <span id="speedVal">2.0 s</span></label>
+      <label>Recall
+        <select id="mode">
+          <option value="0">Show everything</option>
+          <option value="1">Hide every other word</option>
+          <option value="2">First word only</option>
+          <option value="3">Hide all</option>
+        </select>
+      </label>
+    </div>
+    <div class="stage">
+      <p id="line" aria-live="polite" title="Click or press R to reveal">Loading…</p>
+      <p class="hint">Click the line or press <kbd>R</kbd> to reveal &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> navigate &nbsp;·&nbsp; <kbd>Space</kbd> play &nbsp;·&nbsp; <kbd>⌘←</kbd> <kbd>⌘→</kbd> first/last</p>
+    </div>
+    <div class="controls">
+      <div class="nav">
+        <button id="prev"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Previous</button>
+        <button id="next">Next<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <button id="play"><svg viewBox="0 0 24 24"><path d="M7 4l12 8-12 8z"/></svg><span>Play</span></button>
+    </div>
+  </section>
 </main>
 <script src="app.js"></script>
 <script>
   let lines = [], i = 0, timer = null;
   const $ = id => document.getElementById(id);
+  const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  // ponytail: underscore runs from maskLine become drawn rules; width ≈ 0.55em per character
+  const render = masked => masked.split(' ').map(w =>
+    /^_+$/.test(w) ? `<span class="blank" style="width:${(w.length * 0.55).toFixed(2)}em"></span>` : esc(w)).join(' ');
   const level = () => Number($('mode').value);
   const show = (reveal = false) => {
     const el = $('line');
     el.classList.add('out');
-    setTimeout(() => { el.textContent = maskLine(lines[i] ?? '', reveal ? 0 : level()); el.classList.remove('out'); }, 250);
-    $('progress').textContent = `Line ${i + 1} of ${lines.length}`;
-    $('fill').style.width = ((i + 1) / lines.length * 100) + '%';
+    setTimeout(() => { el.innerHTML = render(maskLine(lines[i] ?? '', reveal ? 0 : level())); el.classList.remove('out'); }, 250);
+    $('num').textContent = i + 1;
+    $('of').textContent = `of ${lines.length}`;
   };
   const step = d => { i = wrap(i + d, lines.length); show(); };
-  const stop = () => { clearInterval(timer); timer = null; $('play').textContent = 'Play'; };
+  const setPlaying = on => { $('play').classList.toggle('on', on); $('play').querySelector('span').textContent = on ? 'Pause' : 'Play'; };
+  const stop = () => { clearInterval(timer); timer = null; setPlaying(false); };
 
   $('next').onclick = () => step(1);
   $('prev').onclick = () => step(-1);
   $('play').onclick = () => {
     if (timer) return stop();
-    $('play').textContent = 'Pause';
+    setPlaying(true);
     timer = setInterval(() => step(1), delay()); // loops via wrap()
   };
   const delay = () => $('speed').value * 1000;
   $('speed').oninput = () => {
-    $('speedVal').textContent = Number($('speed').value).toFixed(1) + 's';
+    $('speedVal').textContent = Number($('speed').value).toFixed(1) + ' s';
     if (timer) { stop(); $('play').click(); } // restart interval at new speed
   };
   const reveal = () => show(true);
   $('line').onclick = reveal;
   $('mode').onchange = () => show();
   document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
     const first = () => step(-i), last = () => step(lines.length - 1 - i);
     const keys = { ArrowRight: e.metaKey ? last : () => step(1), ArrowLeft: e.metaKey ? first : () => step(-1),
                    Home: first, End: last, ' ': () => $('play').click(), k: () => $('play').click(), r: reveal };
@@ -122,7 +130,7 @@
     .then(t => {
       lines = parseLyrics(t);
       const title = parseTitle(t);
-      if (title) { $('title').textContent = title; $('title').hidden = false; document.title = title; }
+      if (title) { $('title').textContent = title; document.title = title; }
       show();
     })
     .catch(e => { $('line').textContent = 'Could not load lyrics.txt (' + e + '). Serve over HTTP.'; });
