@@ -1,4 +1,5 @@
 import datetime
+import logging
 import requests
 import string
 from flask import Flask, render_template, request, redirect, url_for
@@ -13,6 +14,8 @@ api_key = os.getenv("OWM_API_KEY")
 # api_key = os.environ.get("OWM_API_KEY")
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+API_TIMEOUT = 10  # seconds per OpenWeather call
 
 
 # Display home page and get city name entered into search form
@@ -32,33 +35,42 @@ def get_weather(city):
     today = datetime.datetime.now()
     current_date = today.strftime("%A, %B %d")
 
-    # Get latitude and longitude for city
-    location_params = {
-        "q": city_name,
-        "appid": api_key,
-        "limit": 3,
-    }
+    try:
+        # Get latitude and longitude for city
+        location_params = {
+            "q": city_name,
+            "appid": api_key,
+            "limit": 3,
+        }
+        location_response = requests.get(GEOCODING_API_ENDPOINT, params=location_params, timeout=API_TIMEOUT)
+        location_response.raise_for_status()
+        location_data = location_response.json()
 
-    location_response = requests.get(GEOCODING_API_ENDPOINT, params=location_params)
-    location_data = location_response.json()
-
-    # Prevent IndexError if user entered a city name with no coordinates by redirecting to error page
-    if not location_data:
-        return redirect(url_for("error"))
-    else:
+        # Empty list means the geocoder found no coordinates for that name
+        if not location_data:
+            return redirect(url_for("error"))
         lat = location_data[0]['lat']
         lon = location_data[0]['lon']
 
-    # Get OpenWeather API data
-    weather_params = {
-        "lat": lat,
-        "lon": lon,
-        "appid": api_key,
-        "units": "metric",
-    }
-    weather_response = requests.get(OWM_ENDPOINT, weather_params)
-    weather_response.raise_for_status()
-    weather_data = weather_response.json()
+        # Get OpenWeather API data
+        weather_params = {
+            "lat": lat,
+            "lon": lon,
+            "appid": api_key,
+            "units": "metric",
+        }
+        weather_response = requests.get(OWM_ENDPOINT, weather_params, timeout=API_TIMEOUT)
+        weather_response.raise_for_status()
+        weather_data = weather_response.json()
+
+        # Get five-day weather forecast data
+        forecast_response = requests.get(OWM_FORECAST_ENDPOINT, weather_params, timeout=API_TIMEOUT)
+        forecast_response.raise_for_status()
+        forecast_data = forecast_response.json()
+    except requests.RequestException as e:
+        # Covers connection errors, timeouts, and non-2xx responses (e.g. 401 for a bad API key)
+        app.logger.error("OpenWeather request failed for %r: %s", city_name, e)
+        return redirect(url_for("error", reason="api"))
 
     # Get current weather data
     current_temp = round(weather_data['main']['temp'])
@@ -66,10 +78,6 @@ def get_weather(city):
     min_temp = round(weather_data['main']['temp_min'])
     max_temp = round(weather_data['main']['temp_max'])
     wind_speed = weather_data['wind']['speed']
-
-    # Get five-day weather forecast data
-    forecast_response = requests.get(OWM_FORECAST_ENDPOINT, weather_params)
-    forecast_data = forecast_response.json()
 
     # Make lists of temperature and weather description data to show user
     five_day_temp_list = [round(item['main']['temp']) for item in forecast_data['list'] if '12:00:00' in item['dt_txt']]
@@ -90,7 +98,11 @@ def get_weather(city):
 # Display error page for invalid input
 @app.route("/error")
 def error():
-    return render_template("error.html")
+    if request.args.get("reason") == "api":
+        message = "Weather service unavailable. Please try again later."
+    else:
+        message = "This city does not exist. Please try again."
+    return render_template("error.html", message=message)
 
 
 if __name__ == "__main__":
