@@ -49,13 +49,17 @@
   .speed { display: flex; align-items: center; justify-content: center; gap: .6rem; margin-top: 1.5rem; font-size: .85rem; color: var(--muted); }
   .speed input { width: min(50%, 200px); accent-color: var(--accent); }
   #speedVal { font-variant-numeric: tabular-nums; min-width: 2.5rem; text-align: left; }
+  select { font: inherit; color: var(--fg); background: rgba(255,255,255,.08); border: 1px solid var(--border); border-radius: 8px; padding: .3rem .5rem; }
+  select option { color: #1a0a2e; }
+  #line { cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { #line, .bar > div, button { transition: none; } }
   .hint { color: var(--muted); font-size: .75rem; margin: 1.5rem 0 0; }
   kbd { font: inherit; padding: .1rem .4rem; margin: 0 .1rem; border: 1px solid var(--border); border-radius: 4px; background: rgba(255,255,255,.06); }
   @media (max-width: 420px) { .controls button { flex: 1 1 100%; } #play { order: -1; } }
 </style>
 <main class="card">
   <h1>Now Playing</h1>
-  <p id="line">Loading…</p>
+  <p id="line" aria-live="polite" title="Click or press R to reveal">Loading…</p>
   <p id="progress"></p>
   <div class="bar"><div id="fill"></div></div>
   <div class="controls">
@@ -64,16 +68,25 @@
     <button id="next">Next ›</button>
   </div>
   <label class="speed">Speed <input id="speed" type="range" min="0.5" max="5" step="0.5" value="2"> <span id="speedVal">2.0s</span></label>
-  <p class="hint"><kbd>←</kbd><kbd>→</kbd> navigate &nbsp; <kbd>Space</kbd> play/pause &nbsp; <kbd>⌘←</kbd><kbd>⌘→</kbd> or <kbd>Fn←</kbd><kbd>Fn→</kbd> first/last</p>
+  <label class="speed">Recall
+    <select id="mode">
+      <option value="0">Show everything</option>
+      <option value="1">Hide every other word</option>
+      <option value="2">First word only</option>
+      <option value="3">Hide all</option>
+    </select>
+  </label>
+  <p class="hint"><kbd>←</kbd><kbd>→</kbd> navigate &nbsp; <kbd>Space</kbd> play/pause &nbsp; <kbd>R</kbd> reveal &nbsp; <kbd>⌘←</kbd><kbd>⌘→</kbd> or <kbd>Fn←</kbd><kbd>Fn→</kbd> first/last</p>
 </main>
 <script src="app.js"></script>
 <script>
   let lines = [], i = 0, timer = null;
   const $ = id => document.getElementById(id);
-  const show = () => {
+  const level = () => Number($('mode').value);
+  const show = (reveal = false) => {
     const el = $('line');
     el.classList.add('out');
-    setTimeout(() => { el.textContent = lines[i] ?? ''; el.classList.remove('out'); }, 250);
+    setTimeout(() => { el.textContent = maskLine(lines[i] ?? '', reveal ? 0 : level()); el.classList.remove('out'); }, 250);
     $('progress').textContent = `Line ${i + 1} of ${lines.length}`;
     $('fill').style.width = ((i + 1) / lines.length * 100) + '%';
   };
@@ -92,10 +105,13 @@
     $('speedVal').textContent = Number($('speed').value).toFixed(1) + 's';
     if (timer) { stop(); $('play').click(); } // restart interval at new speed
   };
+  const reveal = () => show(true);
+  $('line').onclick = reveal;
+  $('mode').onchange = () => show();
   document.addEventListener('keydown', e => {
     const first = () => step(-i), last = () => step(lines.length - 1 - i);
     const keys = { ArrowRight: e.metaKey ? last : () => step(1), ArrowLeft: e.metaKey ? first : () => step(-1),
-                   Home: first, End: last, ' ': () => $('play').click(), k: () => $('play').click() };
+                   Home: first, End: last, ' ': () => $('play').click(), k: () => $('play').click(), r: reveal };
     if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
   });
 
