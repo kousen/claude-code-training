@@ -33,7 +33,8 @@ def fake_response(json_body, status=200):
     return resp
 
 
-GEOCODE_OK = [{"name": "Paris", "lat": 48.85, "lon": 2.35}]
+GEOCODE_OK = [{"name": "Paris", "lat": 48.85, "lon": 2.35, "country": "FR"}]
+GEOCODE_US = [{"name": "Springfield", "lat": 39.80, "lon": -89.64, "country": "US", "state": "Illinois"}]
 
 WEATHER_OK = {
     "main": {"temp": 21.4, "temp_min": 18.6, "temp_max": 24.2},
@@ -52,6 +53,54 @@ def forecast_ok(days=5):
         items.append({"dt_txt": f"{day} 09:00:00", "main": {"temp": 10.0}, "weather": [{"main": "Rain"}]})
         items.append({"dt_txt": f"{day} 12:00:00", "main": {"temp": 20.0 + i}, "weather": [{"main": "Clear"}]})
     return {"list": items}
+
+
+# --- Query normalization (US city, state) ----------------------------------
+
+@pytest.mark.parametrize("query, expected", [
+    ("Springfield, IL", "Springfield,IL,US"),
+    ("springfield, illinois", "springfield,IL,US"),
+    ("Portland, or ", "Portland,OR,US"),
+    ("Washington, DC", "Washington,DC,US"),
+    ("Springfield", "Springfield"),                 # bare city untouched
+    ("Springfield, IL, US", "Springfield,IL,US"),   # already complete
+    ("Paris, France", "Paris,France"),              # non-state second field untouched
+    ("Paris, TX, FR", "Paris,TX,FR"),               # three parts never rewritten
+])
+def test_normalize_query(query, expected):
+    assert main.normalize_query(query) == expected
+
+
+@patch("main.requests.get")
+def test_city_state_query_is_sent_with_us_suffix(mock_get, client):
+    mock_get.side_effect = [fake_response(GEOCODE_US), fake_response(WEATHER_OK), fake_response(forecast_ok())]
+    client.get("/weather/Springfield, IL")
+    assert mock_get.call_args_list[0].kwargs["params"]["q"] == "Springfield,IL,US"
+
+
+# --- Units by country --------------------------------------------------------
+
+@patch("main.requests.get")
+def test_us_location_uses_imperial_units(mock_get, client):
+    mock_get.side_effect = [fake_response(GEOCODE_US), fake_response(WEATHER_OK), fake_response(forecast_ok())]
+    r = client.get("/weather/springfield")
+    html = r.data.decode()
+    for call in mock_get.call_args_list[1:]:
+        assert call.args[1]["units"] == "imperial"
+    assert "21ºF" in html
+    assert "3.6 mph" in html
+    assert "Springfield, Illinois" in html   # display name from geocoder, not raw input
+
+
+@patch("main.requests.get")
+def test_non_us_location_uses_metric_units(mock_get, client):
+    mock_get.side_effect = [fake_response(GEOCODE_OK), fake_response(WEATHER_OK), fake_response(forecast_ok())]
+    r = client.get("/weather/paris")
+    html = r.data.decode()
+    for call in mock_get.call_args_list[1:]:
+        assert call.args[1]["units"] == "metric"
+    assert "21ºC" in html
+    assert "3.6 meter/sec" in html
 
 
 # --- Home page ---------------------------------------------------------------
@@ -102,7 +151,7 @@ def test_weather_calls_use_geocoded_coords_and_timeout(mock_get, client):
     client.get("/weather/paris")
     geo_call, weather_call, forecast_call = mock_get.call_args_list
     assert geo_call.args[0] == main.GEOCODING_API_ENDPOINT
-    assert geo_call.kwargs["params"]["q"] == "Paris"
+    assert geo_call.kwargs["params"]["q"] == "paris"  # normalized, not capitalized
     assert weather_call.args[0] == main.OWM_ENDPOINT
     assert weather_call.args[1]["lat"] == 48.85
     assert weather_call.args[1]["lon"] == 2.35

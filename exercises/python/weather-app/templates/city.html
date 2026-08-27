@@ -19,7 +19,7 @@
                     <h2> {{ current_date }} </h2>
                 </div>
                 <div class="daily-forecast">
-                    <p id="current-temp"> {{ current_temp }}ºC </p>
+                    <p id="current-temp"> {{ current_temp }}º{{ temp_unit }} </p>
                     <div class="daily-section">
                         <img class="weather-icon" src="/static/assets/{{ current_weather.lower() }}.png" alt="">
                         <p class="forecast-text"> {{ current_weather }} </p>
@@ -30,7 +30,7 @@
                     </div> 
                     <div class="daily-section">
                         <img class="weather-icon" src="/static/assets/wind.png" alt="">
-                        <p class="forecast-text"> {{ wind_speed }} meter/sec </p>
+                        <p class="forecast-text"> {{ wind_speed }} {{ wind_unit }} </p>
                     </div> 
                 </div>
                 <div class="divider"> </div>

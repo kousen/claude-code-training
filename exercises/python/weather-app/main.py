@@ -17,6 +17,34 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 API_TIMEOUT = 10  # seconds per OpenWeather call
 
+# OpenWeather's geocoder needs "city,state,country" for US states; a bare "city,state"
+# is read as "city,country" and returns nothing. Map codes and full names -> code.
+US_STATES = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California",
+    "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", "FL": "Florida", "GA": "Georgia",
+    "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa",
+    "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi", "MO": "Missouri",
+    "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire", "NJ": "New Jersey",
+    "NM": "New Mexico", "NY": "New York", "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio",
+    "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont",
+    "VA": "Virginia", "WA": "Washington", "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming",
+    "DC": "District of Columbia",
+}
+_STATE_LOOKUP = {code: code for code in US_STATES} | {name.upper(): code for code, name in US_STATES.items()}
+
+
+def normalize_query(query):
+    """Turn 'Springfield, IL' or 'Springfield, Illinois' into 'Springfield,IL,US'.
+    Anything else (bare city, city,country, city,state,country) is returned trimmed."""
+    parts = [p.strip() for p in query.split(",") if p.strip()]
+    if len(parts) == 2:
+        code = _STATE_LOOKUP.get(parts[1].upper())
+        if code:
+            return f"{parts[0]},{code},US"
+    return ",".join(parts)
+
 
 # Display home page and get city name entered into search form
 @app.route("/", methods=["GET", "POST"])
@@ -38,7 +66,7 @@ def get_weather(city):
     try:
         # Get latitude and longitude for city
         location_params = {
-            "q": city_name,
+            "q": normalize_query(city),
             "appid": api_key,
             "limit": 3,
         }
@@ -49,15 +77,21 @@ def get_weather(city):
         # Empty list means the geocoder found no coordinates for that name
         if not location_data:
             return redirect(url_for("error"))
-        lat = location_data[0]['lat']
-        lon = location_data[0]['lon']
+        place = location_data[0]
+        lat, lon = place['lat'], place['lon']
+
+        # US locations get Fahrenheit/mph straight from the API; everyone else Celsius/m/s
+        is_us = place.get('country') == 'US'
+        units = "imperial" if is_us else "metric"
+        if is_us and place.get('state'):
+            city_name = f"{place['name']}, {place['state']}"
 
         # Get OpenWeather API data
         weather_params = {
             "lat": lat,
             "lon": lon,
             "appid": api_key,
-            "units": "metric",
+            "units": units,
         }
         weather_response = requests.get(OWM_ENDPOINT, weather_params, timeout=API_TIMEOUT)
         weather_response.raise_for_status()
@@ -94,7 +128,8 @@ def get_weather(city):
 
     return render_template("city.html", city_name=city_name, current_date=current_date, current_temp=current_temp,
                            current_weather=current_weather, min_temp=min_temp, max_temp=max_temp, wind_speed=wind_speed,
-                           today_label=today.strftime("%a"), forecast=forecast)
+                           today_label=today.strftime("%a"), forecast=forecast,
+                           temp_unit="F" if is_us else "C", wind_unit="mph" if is_us else "meter/sec")
 
 
 # Display error page for invalid input
