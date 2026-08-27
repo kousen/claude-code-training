@@ -35,6 +35,7 @@ def fake_response(json_body, status=200):
 
 GEOCODE_OK = [{"name": "Paris", "lat": 48.85, "lon": 2.35, "country": "FR"}]
 GEOCODE_US = [{"name": "Springfield", "lat": 39.80, "lon": -89.64, "country": "US", "state": "Illinois"}]
+GEOCODE_CA = [{"name": "Toronto", "lat": 43.65, "lon": -79.38, "country": "CA", "state": "Ontario"}]
 
 WEATHER_OK = {
     "main": {"temp": 21.4, "temp_min": 18.6, "temp_max": 24.2},
@@ -62,20 +63,50 @@ def forecast_ok(days=5):
     ("springfield, illinois", "springfield,IL,US"),
     ("Portland, or ", "Portland,OR,US"),
     ("Washington, DC", "Washington,DC,US"),
-    ("Springfield", "Springfield"),                 # bare city untouched
-    ("Springfield, IL, US", "Springfield,IL,US"),   # already complete
-    ("Paris, France", "Paris,France"),              # non-state second field untouched
-    ("Paris, TX, FR", "Paris,TX,FR"),               # three parts never rewritten
+    ("Toronto, CA", "Toronto,CA,US"),        # CA is also Canada: only correct as a *fallback*
+    ("Springfield", None),                   # bare city
+    ("Springfield, IL, US", None),           # already complete
+    ("Paris, France", None),                 # non-state second field
+    ("Paris, TX, FR", None),                 # three parts never rewritten
 ])
-def test_normalize_query(query, expected):
-    assert main.normalize_query(query) == expected
+def test_us_state_query(query, expected):
+    assert main.us_state_query(query) == expected
 
 
 @patch("main.requests.get")
-def test_city_state_query_is_sent_with_us_suffix(mock_get, client):
-    mock_get.side_effect = [fake_response(GEOCODE_US), fake_response(WEATHER_OK), fake_response(forecast_ok())]
-    client.get("/weather/Springfield, IL")
-    assert mock_get.call_args_list[0].kwargs["params"]["q"] == "Springfield,IL,US"
+def test_city_state_retries_with_us_suffix_when_typed_form_is_empty(mock_get, client):
+    mock_get.side_effect = [
+        fake_response([]),            # 'Springfield, IL' as typed -> geocoder reads IL as a country
+        fake_response(GEOCODE_US),    # retry as 'Springfield,IL,US'
+        fake_response(WEATHER_OK),
+        fake_response(forecast_ok()),
+    ]
+    r = client.get("/weather/Springfield, IL")
+    assert r.status_code == 200
+    queries = [c.kwargs["params"]["q"] for c in mock_get.call_args_list[:2]]
+    assert queries == ["Springfield, IL", "Springfield,IL,US"]
+
+
+@patch("main.requests.get")
+def test_state_code_that_is_also_a_country_code_is_not_rewritten(mock_get, client):
+    """'Toronto, CA' must reach the geocoder as typed and, since Canada matches, never retry as US."""
+    mock_get.side_effect = [fake_response(GEOCODE_CA), fake_response(WEATHER_OK), fake_response(forecast_ok())]
+    r = client.get("/weather/Toronto, CA")
+    assert r.status_code == 200
+    assert mock_get.call_count == 3
+    assert mock_get.call_args_list[0].kwargs["params"]["q"] == "Toronto, CA"
+    html = r.data.decode()
+    assert "Toronto, Ontario" in html
+    assert "21ºC" in html
+
+
+@patch("main.requests.get")
+def test_unknown_city_state_retries_once_then_errors(mock_get, client):
+    mock_get.return_value = fake_response([])
+    r = client.get("/weather/Nowhere, IL")
+    assert r.status_code == 302
+    assert r.headers["Location"].endswith("/error")
+    assert mock_get.call_count == 2   # typed form + US retry, no weather calls
 
 
 # --- Units by country --------------------------------------------------------
@@ -117,6 +148,14 @@ def test_home_post_redirects_to_weather_page(client):
     assert r.headers["Location"].endswith("/weather/London")
 
 
+@patch("main.requests.get")
+def test_search_with_comma_survives_redirect(mock_get, client):
+    mock_get.side_effect = [fake_response([]), fake_response(GEOCODE_US), fake_response(WEATHER_OK), fake_response(forecast_ok())]
+    r = client.post("/", data={"search": "Springfield, IL"}, follow_redirects=True)
+    assert r.status_code == 200
+    assert mock_get.call_args_list[0].kwargs["params"]["q"] == "Springfield, IL"
+
+
 # --- Weather page: happy path ------------------------------------------------
 
 @patch("main.requests.get")
@@ -129,7 +168,7 @@ def test_weather_page_renders_current_and_forecast(mock_get, client):
     r = client.get("/weather/paris")
     assert r.status_code == 200
     html = r.data.decode()
-    assert "Paris" in html              # string.capwords applied
+    assert "<h1> Paris </h1>" in html   # heading from geocoder name, not raw 'paris'
     assert "21" in html                 # rounded current temp
     assert "Clouds" in html
     # Forecast conditions render as icon filenames; template shows days 1-4 (today uses current weather)

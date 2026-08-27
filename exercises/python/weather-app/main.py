@@ -1,7 +1,6 @@
 import datetime
 import logging
 import requests
-import string
 from flask import Flask, render_template, request, redirect, url_for
 import os
 from dotenv import load_dotenv
@@ -34,16 +33,34 @@ US_STATES = {
 }
 _STATE_LOOKUP = {code: code for code in US_STATES} | {name.upper(): code for code, name in US_STATES.items()}
 
+# OpenWeather units param -> (temperature label, wind-speed label)
+UNITS = {"imperial": ("F", "mph"), "metric": ("C", "meter/sec")}
 
-def normalize_query(query):
-    """Turn 'Springfield, IL' or 'Springfield, Illinois' into 'Springfield,IL,US'.
-    Anything else (bare city, city,country, city,state,country) is returned trimmed."""
+
+def us_state_query(query):
+    """If query looks like 'City, ST' or 'City, State Name' for a US state, return
+    'City,ST,US'; otherwise None. Many state codes are also country codes (CA, DE, IN,
+    GA...), so callers should try the query as typed first and only fall back to this."""
     parts = [p.strip() for p in query.split(",") if p.strip()]
     if len(parts) == 2:
         code = _STATE_LOOKUP.get(parts[1].upper())
         if code:
             return f"{parts[0]},{code},US"
-    return ",".join(parts)
+    return None
+
+
+def geocode(query):
+    """Return the geocoder's result list for query, retrying with the US-state
+    expansion if the query as typed matches nothing."""
+    params = {"q": query, "appid": api_key, "limit": 3}
+    response = requests.get(GEOCODING_API_ENDPOINT, params=params, timeout=API_TIMEOUT)
+    response.raise_for_status()
+    results = response.json()
+    if not results and (retry := us_state_query(query)):
+        response = requests.get(GEOCODING_API_ENDPOINT, params={**params, "q": retry}, timeout=API_TIMEOUT)
+        response.raise_for_status()
+        results = response.json()
+    return results
 
 
 # Display home page and get city name entered into search form
@@ -58,33 +75,25 @@ def home():
 # Display weather forecast for specific city using data from OpenWeather API
 @app.route("/weather/<city>")
 def get_weather(city):
-    # Format city name and get current date to display on page
-    city_name = string.capwords(city)
     today = datetime.datetime.now()
     current_date = today.strftime("%A, %B %d")
 
     try:
-        # Get latitude and longitude for city
-        location_params = {
-            "q": normalize_query(city),
-            "appid": api_key,
-            "limit": 3,
-        }
-        location_response = requests.get(GEOCODING_API_ENDPOINT, params=location_params, timeout=API_TIMEOUT)
-        location_response.raise_for_status()
-        location_data = location_response.json()
-
+        location_data = geocode(city)
         # Empty list means the geocoder found no coordinates for that name
         if not location_data:
             return redirect(url_for("error"))
         place = location_data[0]
         lat, lon = place['lat'], place['lon']
 
+        # Heading comes from the geocoder, not the raw URL text
+        city_name = place.get('name', city)
+        if place.get('state'):
+            city_name += f", {place['state']}"
+
         # US locations get Fahrenheit/mph straight from the API; everyone else Celsius/m/s
-        is_us = place.get('country') == 'US'
-        units = "imperial" if is_us else "metric"
-        if is_us and place.get('state'):
-            city_name = f"{place['name']}, {place['state']}"
+        units = "imperial" if place.get('country') == 'US' else "metric"
+        temp_unit, wind_unit = UNITS[units]
 
         # Get OpenWeather API data
         weather_params = {
@@ -103,7 +112,7 @@ def get_weather(city):
         forecast_data = forecast_response.json()
     except requests.RequestException as e:
         # Covers connection errors, timeouts, and non-2xx responses (e.g. 401 for a bad API key)
-        app.logger.error("OpenWeather request failed for %r: %s", city_name, e)
+        app.logger.error("OpenWeather request failed for %r: %s", city, e)
         return redirect(url_for("error", reason="api"))
 
     # Get current weather data
@@ -129,7 +138,7 @@ def get_weather(city):
     return render_template("city.html", city_name=city_name, current_date=current_date, current_temp=current_temp,
                            current_weather=current_weather, min_temp=min_temp, max_temp=max_temp, wind_speed=wind_speed,
                            today_label=today.strftime("%a"), forecast=forecast,
-                           temp_unit="F" if is_us else "C", wind_unit="mph" if is_us else "meter/sec")
+                           temp_unit=temp_unit, wind_unit=wind_unit)
 
 
 # Display error page for invalid input
