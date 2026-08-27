@@ -25,6 +25,7 @@
     backdrop-filter: blur(20px); box-shadow: 0 25px 60px rgba(0,0,0,.45); text-align: center;
   }
   h1 { font: 500 .8rem/1 Inter, sans-serif; letter-spacing: .25em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.5rem; }
+  h2 { font: 600 1rem/1.2 Inter, sans-serif; letter-spacing: .02em; margin: -1rem 0 1.5rem; color: var(--fg); }
   h1::before { content: "♪ "; color: var(--accent); }
   #line {
     font-family: "Playfair Display", Georgia, serif; font-size: clamp(1.4rem, 4.5vw, 2.25rem); font-style: italic; line-height: 1.35;
@@ -59,6 +60,7 @@
 </style>
 <main class="card">
   <h1>Now Playing</h1>
+  <h2 id="title" hidden></h2>
   <p id="line" aria-live="polite" title="Click or press R to reveal">Loading…</p>
   <p id="progress"></p>
   <div class="bar"><div id="fill"></div></div>
@@ -117,6 +119,11 @@
 
   fetch('lyrics.txt')
     .then(r => r.ok ? r.text() : Promise.reject(r.status))
-    .then(t => { lines = parseLyrics(t); show(); })
+    .then(t => {
+      lines = parseLyrics(t);
+      const title = parseTitle(t);
+      if (title) { $('title').textContent = title; $('title').hidden = false; document.title = title; }
+      show();
+    })
     .catch(e => { $('line').textContent = 'Could not load lyrics.txt (' + e + '). Serve over HTTP.'; });
 </script>

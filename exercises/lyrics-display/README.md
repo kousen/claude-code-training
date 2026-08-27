@@ -41,7 +41,14 @@ Hidden words keep their length. Click the line or press **R** to reveal it.
 ## Change the lyrics
 
 Replace `lyrics.txt` with any plain-text file, one lyric line per line.
-Blank lines are ignored.
+Blank lines are ignored. An optional first line starting with `#` sets the
+song title shown in the header and browser tab:
+
+```
+# My Song Title
+first lyric line
+second lyric line
+```
 
 ## Test
 
@@ -55,6 +62,6 @@ The DOM wiring lives inline in `index.html`.
 ## Files
 
 - `index.html` — markup, styles, and DOM/event code
-- `app.js` — pure functions (`parseLyrics`, `wrap`, `maskLine`), shared with the tests
+- `app.js` — pure functions (`parseLyrics`, `parseTitle`, `wrap`, `maskLine`), shared with the tests
 - `app.test.js` — `node:test` suite
 - `lyrics.txt` — the lyrics to display
