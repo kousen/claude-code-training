@@ -64,7 +64,7 @@
     <button id="next">Next ›</button>
   </div>
   <label class="speed">Speed <input id="speed" type="range" min="0.5" max="5" step="0.5" value="2"> <span id="speedVal">2.0s</span></label>
-  <p class="hint"><kbd>←</kbd><kbd>→</kbd> navigate &nbsp; <kbd>Space</kbd> play/pause &nbsp; <kbd>Home</kbd><kbd>End</kbd> first/last</p>
+  <p class="hint"><kbd>←</kbd><kbd>→</kbd> navigate &nbsp; <kbd>Space</kbd> play/pause &nbsp; <kbd>⌘←</kbd><kbd>⌘→</kbd> or <kbd>Fn←</kbd><kbd>Fn→</kbd> first/last</p>
 </main>
 <script src="app.js"></script>
 <script>
@@ -93,8 +93,9 @@
     if (timer) { stop(); $('play').click(); } // restart interval at new speed
   };
   document.addEventListener('keydown', e => {
-    const keys = { ArrowRight: () => step(1), ArrowLeft: () => step(-1), Home: () => step(-i), End: () => step(lines.length - 1 - i),
-                   ' ': () => $('play').click(), k: () => $('play').click() };
+    const first = () => step(-i), last = () => step(lines.length - 1 - i);
+    const keys = { ArrowRight: e.metaKey ? last : () => step(1), ArrowLeft: e.metaKey ? first : () => step(-1),
+                   Home: first, End: last, ' ': () => $('play').click(), k: () => $('play').click() };
     if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
   });
 
