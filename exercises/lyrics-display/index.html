@@ -66,6 +66,7 @@
   <label class="speed">Speed <input id="speed" type="range" min="0.5" max="5" step="0.5" value="2"> <span id="speedVal">2.0s</span></label>
   <p class="hint"><kbd>←</kbd><kbd>→</kbd> navigate &nbsp; <kbd>Space</kbd> play/pause &nbsp; <kbd>Home</kbd><kbd>End</kbd> first/last</p>
 </main>
+<script src="app.js"></script>
 <script>
   let lines = [], i = 0, timer = null;
   const $ = id => document.getElementById(id);
@@ -78,7 +79,7 @@
     $('prev').disabled = i === 0;
     $('next').disabled = i === lines.length - 1;
   };
-  const step = d => { i = Math.min(Math.max(i + d, 0), lines.length - 1); show(); };
+  const step = d => { i = clamp(i + d, lines.length); show(); };
   const stop = () => { clearInterval(timer); timer = null; $('play').textContent = 'Play'; };
 
   $('next').onclick = () => step(1);
@@ -103,6 +104,6 @@
 
   fetch('lyrics.txt')
     .then(r => r.ok ? r.text() : Promise.reject(r.status))
-    .then(t => { lines = t.split('\n').filter(l => l.trim()); show(); })
+    .then(t => { lines = parseLyrics(t); show(); })
     .catch(e => { $('line').textContent = 'Could not load lyrics.txt (' + e + '). Serve over HTTP.'; });
 </script>
