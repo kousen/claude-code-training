@@ -1,3 +1,15 @@
+"""Weather App — a small Flask front end for the OpenWeather API.
+
+Request flow for /weather/<city>:
+    1. geocode()  — city name -> lat/lon via the Geocoding API (with a US
+                    'City, ST' retry, see us_state_query)
+    2. current weather  (data/2.5/weather)
+    3. 5-day forecast   (data/2.5/forecast, filtered to the 12:00 entry per day)
+
+US locations are requested in imperial units (°F, mph); everything else in
+metric (°C, m/s). Configuration is a single environment variable, OWM_API_KEY,
+loaded from .env if present.
+"""
 import datetime
 import logging
 import requests
@@ -66,6 +78,9 @@ def geocode(query):
 # Display home page and get city name entered into search form
 @app.route("/", methods=["GET", "POST"])
 def home():
+    """Home page. GET renders the search form; POST redirects to /weather/<city>
+    with whatever the user typed (routing is by endpoint name, so the raw text
+    is preserved in the URL for get_weather to interpret)."""
     if request.method == "POST":
         city = request.form.get("search")
         return redirect(url_for("get_weather", city=city))
@@ -75,6 +90,13 @@ def home():
 # Display weather forecast for specific city using data from OpenWeather API
 @app.route("/weather/<city>")
 def get_weather(city):
+    """Render current conditions and a 5-day forecast for ``city``.
+
+    ``city`` is free text: 'Paris', 'Springfield, IL', 'Toronto, CA',
+    'Springfield, IL, US' all work. Redirects to /error when the geocoder
+    finds nothing, and to /error?reason=api on any OpenWeather failure
+    (HTTP error, timeout, connection error) after logging the cause.
+    """
     today = datetime.datetime.now()
     current_date = today.strftime("%A, %B %d")
 
@@ -144,6 +166,8 @@ def get_weather(city):
 # Display error page for invalid input
 @app.route("/error")
 def error():
+    """Error page. ``?reason=api`` selects the service-unavailable message;
+    otherwise the message is 'city does not exist'."""
     if request.args.get("reason") == "api":
         message = "Weather service unavailable. Please try again later."
     else:

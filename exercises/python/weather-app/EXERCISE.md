@@ -78,9 +78,9 @@ This is a simple Python weather application that fetches weather data from an AP
    pip install -r requirements.txt
    ```
 
-3. Set up your API key (if required):
+3. Set up your API key (free tier at https://openweathermap.org/api):
    ```bash
-   export WEATHER_API_KEY="your-api-key-here"
+   echo 'OWM_API_KEY=your-api-key-here' > .env
    ```
 
 ## Success Criteria

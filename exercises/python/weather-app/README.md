@@ -1,5 +1,101 @@
 # Weather App
-This weather web app built with Flask and OpenWeather API displays the weather forecast for any city. I designed a simplistic UI to make it easier for the user to find the relevant information. All HTML, CSS, and Python code was written from scratch and the CSS is optimised for mobile and desktop through the use of CSS grid, flexbox, and media queries.
+
+A small Flask web app that shows current conditions and a five-day forecast for any city, using the [OpenWeather](https://openweathermap.org/api) geocoding, current-weather, and forecast APIs. Originally written by Rachana Hegde as a portfolio project (see [Origins](#origins)); it now serves as the Python exercise for the Claude Code training course, with tests, error handling, and US-city support added along the way.
+
+## Quick start
+
+Requires Python 3.11+ and a free OpenWeather API key.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+echo 'OWM_API_KEY=your-key-here' > .env
+python main.py
+```
+
+Open <http://127.0.0.1:5000>, type a city, and submit. `main.py` runs Flask in debug mode with auto-reload; for production use the Procfile's `gunicorn main:app`.
+
+## Usage
+
+Search from the home page, or go straight to `/weather/<city>`. Accepted forms:
+
+| Input | Result |
+|---|---|
+| `Paris` | Top geocoder hit (Paris, Ile-de-France) |
+| `Springfield, IL` or `Springfield, Illinois` | Springfield, Illinois — the US-state form OpenWeather rejects on its own |
+| `Springfield, IL, US` | Same, explicit |
+| `Toronto, CA` / `Berlin, DE` | Canada / Germany — country codes that collide with state codes still work |
+| `Nowhere, IL` | Error page: "This city does not exist" |
+
+**Units** are chosen by the geocoder's country: US locations get °F and mph, everyone else °C and meter/sec. The heading shows the geocoder's own name and state/region, so `paris, tx` renders as "Paris, Texas".
+
+**Forecast** tiles show today's current conditions followed by the 12:00 UTC forecast for the next four days.
+
+## How it works
+
+Everything lives in `main.py` (~150 lines), three routes:
+
+| Route | Purpose |
+|---|---|
+| `GET/POST /` | Search form; POST redirects to `/weather/<city>` |
+| `GET /weather/<city>` | Geocode → current weather → forecast → render `city.html` |
+| `GET /error` | Error page; `?reason=api` selects the service-unavailable message |
+
+Request flow for `/weather/<city>`:
+
+1. **`geocode(query)`** calls `geo/1.0/direct` with the input as typed. If that returns nothing and the input looks like `City, ST` for a US state (`us_state_query`), it retries once as `City,ST,US`. Trying as-typed first matters because many state codes are also ISO country codes (`CA`, `DE`, `IN`, `GA`…).
+2. The first result's `country` selects `units=imperial` or `metric`; its `name`/`state` become the page heading.
+3. `data/2.5/weather` and `data/2.5/forecast` are called with the coordinates. Forecast entries are filtered to the `12:00:00` slot for each *future* day — today's noon slot disappears from the API after 12:00 UTC, so labels are derived from each entry's own date rather than counted from today.
+
+All three HTTP calls have a 10-second timeout and `raise_for_status()`; any `requests.RequestException` (bad key, network down, timeout, 5xx) is logged with the query and redirected to `/error?reason=api`.
+
+Stray root paths (`/favicon.ico`, `/robots.txt`) 404 at the router — they never reach the API. Pages declare a PNG favicon from `static/assets/`.
+
+## Configuration
+
+| Variable | Required | Notes |
+|---|---|---|
+| `OWM_API_KEY` | yes | OpenWeather API key. Read from the environment or `.env` via python-dotenv. A missing or invalid key surfaces as the service-unavailable error page with a `401` in the log. |
+
+`.env` is gitignored. `API_TIMEOUT` (seconds) is a constant in `main.py`.
+
+## Testing
+
+```bash
+python -m pytest
+```
+
+`pytest.ini` runs coverage on every invocation and fails the run below 80% (currently ~99%). All tests mock `requests.get`, so the suite runs offline in well under a second. Coverage includes the happy path, unit selection, the US-state retry and country-code collision, every failure branch, the after-noon forecast shape, and routing.
+
+To exercise the real API, start the server and hit it with `curl`; the search term must be URL-encoded (`/weather/Springfield%2C%20IL`).
+
+## Project layout
+
+```
+main.py             Flask app: routes, geocoding, OpenWeather calls
+test_main.py        pytest suite (mocked HTTP)
+pytest.ini          coverage config and 80% gate
+templates/          index.html (search), city.html (weather), error.html
+static/css/         main.css — responsive grid/flexbox layout
+static/assets/      weather icons (named after OpenWeather's condition strings) and backgrounds
+requirements.txt    Flask, requests, python-dotenv, gunicorn, pytest, pytest-cov (plus legacy Jupyter pins)
+Procfile            gunicorn entry point
+EXERCISE.md         Training-course tasks for this project
+```
+
+Weather icons are looked up as `static/assets/<condition>.png` using the lowercased `weather[0].main` value from the API (`Clear`, `Clouds`, `Rain`, …), so a new condition string needs a matching PNG.
+
+## Known limitations
+
+- Ambiguous names (`Springfield`, `Portland`) show whichever result OpenWeather ranks first; there is no chooser. Add the state to disambiguate.
+- US territories (`PR`, `GU`, `VI`) geocode with their own country codes and get metric units.
+- Min/max and forecast temperatures print a bare degree sign without the unit letter.
+- `requirements.txt` still carries Jupyter-related pins from the original project that the app does not use.
+
+## Origins
+
+The sections below are the original author's write-up, kept for attribution and context.
 
 ## Screenshots (Desktop)
 <img src="/screenshots/weather_app_desktop_home_page_screenshot.png">
