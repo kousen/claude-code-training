@@ -25,7 +25,7 @@ def home():
 
 
 # Display weather forecast for specific city using data from OpenWeather API
-@app.route("/<city>", methods=["GET", "POST"])
+@app.route("/weather/<city>")
 def get_weather(city):
     # Format city name and get current date to display on page
     city_name = string.capwords(city)
