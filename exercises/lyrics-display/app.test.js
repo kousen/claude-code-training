@@ -1,15 +1,14 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { parseLyrics, clamp } = require('./app.js');
+const { parseLyrics, wrap } = require('./app.js');
 
 test('parseLyrics drops blank lines and trims', () => {
   assert.deepEqual(parseLyrics('a\n\n  b  \n\t\nc\n'), ['a', 'b', 'c']);
 });
 
-test('clamp keeps index within [0, len-1]', () => {
-  assert.equal(clamp(-1, 5), 0);
-  assert.equal(clamp(5, 5), 4);
-  assert.equal(clamp(2, 5), 2);
-  assert.equal(clamp(-10, 5), 0);  // Home
-  assert.equal(clamp(99, 5), 4);   // End
+test('wrap loops around both ends', () => {
+  assert.equal(wrap(5, 5), 0);    // next past last
+  assert.equal(wrap(-1, 5), 4);   // prev before first
+  assert.equal(wrap(2, 5), 2);
+  assert.equal(wrap(0, 0), 0);    // empty lyrics, no NaN
 });

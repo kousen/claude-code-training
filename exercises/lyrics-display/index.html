@@ -76,20 +76,16 @@
     setTimeout(() => { el.textContent = lines[i] ?? ''; el.classList.remove('out'); }, 250);
     $('progress').textContent = `Line ${i + 1} of ${lines.length}`;
     $('fill').style.width = ((i + 1) / lines.length * 100) + '%';
-    $('prev').disabled = i === 0;
-    $('next').disabled = i === lines.length - 1;
   };
-  const step = d => { i = clamp(i + d, lines.length); show(); };
+  const step = d => { i = wrap(i + d, lines.length); show(); };
   const stop = () => { clearInterval(timer); timer = null; $('play').textContent = 'Play'; };
 
   $('next').onclick = () => step(1);
   $('prev').onclick = () => step(-1);
   $('play').onclick = () => {
     if (timer) return stop();
-    if (i === lines.length - 1) i = 0;
-    show();
     $('play').textContent = 'Pause';
-    timer = setInterval(() => { step(1); if (i === lines.length - 1) stop(); }, delay()); // ponytail: stops at end
+    timer = setInterval(() => step(1), delay()); // loops via wrap()
   };
   const delay = () => $('speed').value * 1000;
   $('speed').oninput = () => {
@@ -97,7 +93,7 @@
     if (timer) { stop(); $('play').click(); } // restart interval at new speed
   };
   document.addEventListener('keydown', e => {
-    const keys = { ArrowRight: () => step(1), ArrowLeft: () => step(-1), Home: () => step(-i), End: () => step(lines.length),
+    const keys = { ArrowRight: () => step(1), ArrowLeft: () => step(-1), Home: () => step(-i), End: () => step(lines.length - 1 - i),
                    ' ': () => $('play').click(), k: () => $('play').click() };
     if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
   });
