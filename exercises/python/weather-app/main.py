@@ -79,20 +79,22 @@ def get_weather(city):
     max_temp = round(weather_data['main']['temp_max'])
     wind_speed = weather_data['wind']['speed']
 
-    # Make lists of temperature and weather description data to show user
-    five_day_temp_list = [round(item['main']['temp']) for item in forecast_data['list'] if '12:00:00' in item['dt_txt']]
-    five_day_weather_list = [item['weather'][0]['main'] for item in forecast_data['list']
-                             if '12:00:00' in item['dt_txt']]
-
-    # Get next four weekdays to show user alongside weather data
-    five_day_unformatted = [today, today + datetime.timedelta(days=1), today + datetime.timedelta(days=2),
-                            today + datetime.timedelta(days=3), today + datetime.timedelta(days=4)]
-    five_day_dates_list = [date.strftime("%a") for date in five_day_unformatted]
+    # Noon forecast for the next four days. Derive the day label from each entry's own
+    # date so labels and data can't drift apart (today's noon entry is absent after 12:00 UTC).
+    today_str = today.strftime("%Y-%m-%d")
+    forecast = [
+        {
+            "day": datetime.datetime.strptime(item["dt_txt"], "%Y-%m-%d %H:%M:%S").strftime("%a"),
+            "temp": round(item["main"]["temp"]),
+            "weather": item["weather"][0]["main"],
+        }
+        for item in forecast_data["list"]
+        if item["dt_txt"].endswith("12:00:00") and not item["dt_txt"].startswith(today_str)
+    ][:4]
 
     return render_template("city.html", city_name=city_name, current_date=current_date, current_temp=current_temp,
                            current_weather=current_weather, min_temp=min_temp, max_temp=max_temp, wind_speed=wind_speed,
-                           five_day_temp_list=five_day_temp_list, five_day_weather_list=five_day_weather_list,
-                           five_day_dates_list=five_day_dates_list)
+                           today_label=today.strftime("%a"), forecast=forecast)
 
 
 # Display error page for invalid input

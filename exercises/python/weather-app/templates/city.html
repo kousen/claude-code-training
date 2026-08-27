@@ -37,30 +37,18 @@
                 <h2> 5-DAY FORECAST </h2>
                 <div class="five-day">
                     <div class="forecast-item">
-                        <p> {{ five_day_dates_list[0] }} </p>
+                        <p> {{ today_label }} </p>
                         <img class="weather-icon" src="/static/assets/{{ current_weather.lower() }}.png" alt="">
                         <p> {{ current_temp }}º </p>
                     </div>
+                    {% for day in forecast %}
                     <div class="forecast-item">
-                        <p> {{ five_day_dates_list[1] }} </p>
-                        <img class="weather-icon" src="/static/assets/{{five_day_weather_list[1].lower()}}.png" alt="">
-                        <p> {{ five_day_temp_list[1] }}º </p>
+                        <p> {{ day.day }} </p>
+                        <img class="weather-icon" src="/static/assets/{{ day.weather.lower() }}.png" alt="">
+                        <p> {{ day.temp }}º </p>
                     </div>
-                    <div class="forecast-item">
-                        <p> {{ five_day_dates_list[2] }} </p>
-                        <img class="weather-icon" src="/static/assets/{{five_day_weather_list[2].lower()}}.png" alt="">
-                        <p> {{ five_day_temp_list[2] }}º </p>
-                    </div>
-                    <div class="forecast-item">
-                        <p> {{five_day_dates_list[3]}} </p>
-                        <img class="weather-icon" src="/static/assets/{{five_day_weather_list[3].lower()}}.png" alt="">
-                        <p> {{ five_day_temp_list[3] }}º </p>
-                    </div>
-                    <div class="forecast-item">
-                        <p> {{five_day_dates_list[4]}} </p>
-                        <img class="weather-icon" src="/static/assets/{{five_day_weather_list[4].lower()}}.png" alt="">
-                        <p> {{ five_day_temp_list[4] }}º </p>
-                    </div>
+                    {% endfor %}
+                </div>
                 </div>
                 <div class="footer">
                     <a href="https://rachanahegde.squarespace.com/"> © Rachana Hegde </a>  

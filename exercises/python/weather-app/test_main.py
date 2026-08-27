@@ -111,6 +111,24 @@ def test_weather_calls_use_geocoded_coords_and_timeout(mock_get, client):
         assert call.kwargs["timeout"] == main.API_TIMEOUT
 
 
+@patch("main.requests.get")
+def test_forecast_after_noon_still_renders_four_days(mock_get, client):
+    """After 12:00 UTC the API omits today's noon entry; page must not crash
+    and labels must come from each entry's own date, not from today+N."""
+    f = forecast_ok(days=6)
+    f["list"] = f["list"][2:]  # drop today's 09:00 and 12:00 entries
+    mock_get.side_effect = [fake_response(GEOCODE_OK), fake_response(WEATHER_OK), fake_response(f)]
+    r = client.get("/weather/paris")
+    assert r.status_code == 200
+    html = r.data.decode()
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    expected_days = [(tomorrow + datetime.timedelta(days=i)).strftime("%a") for i in range(4)]
+    for day, temp in zip(expected_days, range(21, 25)):
+        assert f"<p> {day} </p>" in html
+        assert f"{temp}º" in html
+    assert "25º" not in html  # fifth future day not shown
+
+
 # --- Weather page: failure paths --------------------------------------------
 
 @patch("main.requests.get")
