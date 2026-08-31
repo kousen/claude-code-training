@@ -12,7 +12,7 @@ entrypoints==0.3
 fastjsonschema==2.15.3
 Flask~=2.1.2
 ipykernel==6.5.0
-ipython==7.31.1
+ipython==8.10.0
 ipython-genutils==0.2.0
 itsdangerous==2.0.1
 jedi==0.18.0
