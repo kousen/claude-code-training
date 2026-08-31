@@ -52,7 +52,7 @@ traitlets==5.1.1
 wcwidth==0.2.5
 webencodings==0.5.1
 Werkzeug==2.0.2
-gunicorn==20.1.0
+gunicorn==23.0.0
 
 requests~=2.28.0
 python-dotenv~=0.20.0
