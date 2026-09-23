@@ -74,18 +74,25 @@ def get_weather(city):
         }
         weather_data = owm_get(OWM_ENDPOINT, weather_params)
         forecast_data = owm_get(OWM_FORECAST_ENDPOINT, weather_params)
-    except requests.RequestException:
-        logger.exception("OpenWeather request failed for city %r", city_name)
+
+        weather = {
+            "current_temp": round(weather_data["main"]["temp"]),
+            "current_weather": weather_data["weather"][0]["main"],
+            "min_temp": round(weather_data["main"]["temp_min"]),
+            "max_temp": round(weather_data["main"]["temp_max"]),
+            "wind_speed": weather_data["wind"]["speed"],
+            # dt_txt is UTC, so "today" must be the UTC date too
+            "forecast": noon_forecast(forecast_data["list"],
+                                      datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")),
+        }
+    except (requests.RequestException, KeyError, IndexError, TypeError) as e:
+        # Don't log the exception message: HTTPError text includes the request URL, and with it the API key
+        status = getattr(getattr(e, "response", None), "status_code", None)
+        logger.error("OpenWeather request failed for city %r: %s (status %s)", city_name, type(e).__name__, status)
         return render_template("error.html", message=SERVICE_ERROR), 503
 
     return render_template("city.html", city_name=city_name, current_date=current_date,
-                           current_temp=round(weather_data["main"]["temp"]),
-                           current_weather=weather_data["weather"][0]["main"],
-                           min_temp=round(weather_data["main"]["temp_min"]),
-                           max_temp=round(weather_data["main"]["temp_max"]),
-                           wind_speed=weather_data["wind"]["speed"],
-                           today_label=today.strftime("%a"),
-                           forecast=noon_forecast(forecast_data["list"], today.strftime("%Y-%m-%d")))
+                           today_label=today.strftime("%a"), **weather)
 
 
 # Display error page for invalid input
@@ -94,5 +101,11 @@ def error():
     return render_template("error.html")
 
 
+# Browsers request this automatically; without it, /<city> would spend an API call geocoding "Favicon.ico"
+@app.route("/favicon.ico")
+def favicon():
+    return "", 204
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.getenv("FLASK_DEBUG") == "1")

@@ -78,9 +78,18 @@ This is a simple Python weather application that fetches weather data from an AP
    pip install -r requirements.txt
    ```
 
-3. Set up your API key (if required):
+3. Set up your OpenWeather API key. The app reads `OWM_API_KEY`, either from a `.env` file in the project root:
+   ```
+   OWM_API_KEY=your-api-key-here
+   ```
+   or from the environment:
    ```bash
-   export WEATHER_API_KEY="your-api-key-here"
+   export OWM_API_KEY="your-api-key-here"
+   ```
+
+4. Run the app:
+   ```bash
+   python main.py
    ```
 
 ## Success Criteria

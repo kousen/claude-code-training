@@ -47,15 +47,19 @@ flowchart LR
 
 ```
 weather-app/
-├── main.py              # All application code: config, routes, API calls
+├── main.py              # All application code: config, helpers, routes
 ├── templates/
 │   ├── index.html       # Home page with the city search form
 │   ├── city.html        # Current conditions and 4-day forecast
-│   └── error.html       # Shown when a city can't be geocoded
+│   └── error.html       # Unknown city, or OpenWeather unavailable
 ├── static/
 │   ├── css/main.css     # All styles, including responsive breakpoints
 │   └── assets/          # Background images and weather-condition icons
+├── tests/
+│   └── test_main.py     # pytest suite; OpenWeather calls are mocked
 ├── requirements.txt     # Flask, requests, python-dotenv, gunicorn
+├── requirements-dev.txt # requirements.txt plus pytest, pytest-cov
+├── pytest.ini           # Test paths and pythonpath
 ├── Procfile             # web: gunicorn main:app
 └── .env                 # OWM_API_KEY (not committed)
 ```
@@ -64,9 +68,10 @@ weather-app/
 
 | Route | Methods | Handler | Behavior |
 |---|---|---|---|
-| `/` | GET, POST | `home()` | GET renders the search form. POST reads the `search` field and redirects to `/<city>`. |
-| `/<city>` | GET, POST | `get_weather(city)` | Fetches weather data and renders `city.html`, or redirects to `/error`. |
-| `/error` | GET | `error()` | Renders `error.html`. |
+| `/` | GET, POST | `home()` | GET renders the search form. POST reads and strips the `search` field; a blank value redirects back to `/`, otherwise it redirects to `/<city>`. |
+| `/<city>` | GET | `get_weather(city)` | Fetches weather data and renders `city.html`. Redirects to `/error` if the city is not found. Renders `error.html` with HTTP 503 if an OpenWeather request fails. |
+| `/error` | GET | `error()` | Renders `error.html` with its default "This city does not exist" message. |
+| `/favicon.ico` | GET | `favicon()` | Returns an empty 204 response. Without it, browsers requesting the favicon would hit `/<city>` and spend a geocoding call. |
 
 Flask matches static routes like `/error` before variable routes like `/<city>`, so `/error` is never interpreted as a city name.
 
@@ -99,48 +104,55 @@ sequenceDiagram
         Flask->>Forecast: GET ?lat&lon&units=metric
         Forecast-->>Flask: 40 entries in 3-hour steps
         Flask-->>Browser: city.html
+    else Any OpenWeather call fails (timeout, network error, non-2xx)
+        Flask-->>Browser: 503 error.html with service message
     end
     Browser->>Flask: GET /static/css/main.css and icons
 ```
 
 The three API calls run **sequentially and synchronously** on every page view. Nothing is cached.
 
+Every call goes through `owm_get(url, params)`, which passes a 10-second timeout (`REQUEST_TIMEOUT`) to `requests.get`, calls `raise_for_status()`, and returns the parsed JSON. Timeouts, connection errors, and non-2xx responses all surface as `requests.RequestException`. Malformed responses (missing fields, empty lists) raise `KeyError`, `IndexError`, or `TypeError` while `get_weather()` extracts the data. The route catches these along with `RequestException` and returns the 503 page. The log records only the exception type and HTTP status, never the exception message, because `HTTPError` messages include the request URL and therefore the API key.
+
 ## Inside `get_weather()`
 
-All of the app's logic lives in one route function. It resolves the city, fetches data, reshapes it, and renders the template.
+The route function resolves the city, fetches data, and renders the template. HTTP details live in `owm_get()`, and forecast selection lives in the pure function `noon_forecast()`.
 
 ```mermaid
 flowchart TD
     start(["GET /#lt;city#gt;"]) --> fmt["Title-case the city name<br/>string.capwords"]
-    fmt --> geo["Call the Geocoding API"]
+    fmt --> geo["owm_get: Geocoding API"]
     geo --> found{"Any results?"}
     found -- "No" --> err(["Redirect to /error"])
     found -- "Yes" --> coords["Use the first result's lat and lon"]
-    coords --> cur["Call the Current Weather API<br/>raise_for_status"]
-    cur --> extract["Extract temp, condition,<br/>min/max, wind speed"]
-    extract --> fc["Call the Forecast API"]
-    fc --> filter["Keep entries at 12:00:00 UTC,<br/>skip today, take the first 4"]
-    filter --> label["Label each day from its own<br/>dt_txt timestamp"]
-    label --> render(["Render city.html"])
+    coords --> cur["owm_get: Current Weather API"]
+    cur --> fc["owm_get: Forecast API"]
+    fc --> extract["Extract temp, condition,<br/>min/max, wind speed"]
+    extract --> filter["noon_forecast: keep 12:00:00 UTC entries,<br/>skip today, take the first 4"]
+    filter --> render(["Render city.html"])
+    geo -. "RequestException" .-> fail(["Log error type and status<br/>render error.html, HTTP 503"])
+    cur -. "RequestException" .-> fail
+    fc -. "RequestException" .-> fail
+    extract -. "Missing fields" .-> fail
 ```
 
 ### Forecast selection
 
-The forecast endpoint returns 40 entries at 3-hour intervals over 5 days. The app keeps the entry stamped `12:00:00` for each of the next four days and derives each day's label from that entry's own timestamp. Deriving labels from the data (not by counting forward from today) keeps labels and temperatures aligned even when today's noon entry has already passed.
+The forecast endpoint returns 40 entries at 3-hour intervals over 5 days. `noon_forecast(entries, today_str)` keeps the entry stamped `12:00:00` for each of the next four days and derives each day's label from that entry's own timestamp. Deriving labels from the data (not by counting forward from today) keeps labels and temperatures aligned even when today's noon entry has already passed.
 
-Timestamps are in **UTC**, so "noon" is 12:00 UTC, not local noon in the searched city.
+Timestamps are in **UTC**, so "noon" is 12:00 UTC, not local noon in the searched city. For the same reason, `get_weather()` passes the current **UTC** date to `noon_forecast()`. Using the server's local date would let yesterday's UTC entry into the forecast whenever the server is ahead of UTC.
 
 ## Presentation layer
 
 ### Templates
 
-Each of the three templates is a standalone HTML document; there is no shared base template. `city.html` receives these variables:
+Each of the three templates is a standalone HTML document; there is no shared base template. `error.html` displays `{{ message or "This city does not exist..." }}`: the `/error` route passes no message, while the 503 path passes `SERVICE_ERROR`. `city.html` receives these variables:
 
 | Variable | Source |
 |---|---|
 | `city_name`, `current_date`, `today_label` | Computed in `get_weather()` |
 | `current_temp`, `current_weather`, `min_temp`, `max_temp`, `wind_speed` | Current Weather API |
-| `forecast` | List of `{day, temp, weather}` dicts from the Forecast API |
+| `forecast` | List of `{day, temp, weather}` dicts built by `noon_forecast()` |
 
 ### Weather icons
 
@@ -166,9 +178,27 @@ This needs no lookup table, but any condition without a matching PNG renders as 
 | Setting | Where | Notes |
 |---|---|---|
 | `OWM_API_KEY` | `.env` or the environment | Required. Loaded by `load_dotenv()` at import time. |
+| `REQUEST_TIMEOUT` | Constant in `main.py` | 10 seconds per OpenWeather request. |
+| `SERVICE_ERROR` | Constant in `main.py` | Message shown on the 503 error page. |
+| Endpoints | Constants in `main.py` | `OWM_ENDPOINT`, `OWM_FORECAST_ENDPOINT`, `GEOCODING_API_ENDPOINT`; all HTTPS. |
 | Units | Hard-coded in `main.py` | `units=metric`; the template hard-codes `ºC`. |
-| Dev server | `python main.py` | Flask debug server on port 5000 |
+| Dev server | `python main.py` | Flask dev server on port 5000. Set `FLASK_DEBUG=1` to enable the debugger and reloader. |
 | Production | `gunicorn main:app` | Defined in `Procfile` |
+
+## Testing
+
+The suite in `tests/test_main.py` has 23 pytest tests. `requests.get` is patched, so no network access or API key is needed.
+
+- `noon_forecast()` is tested directly with plain data, including the case where today's noon entry has already passed.
+- Route tests use Flask's test client: home page, search redirect, blank search, a full city page, an unknown city, an HTTP error from each of the three OpenWeather calls (parametrized), a network timeout, and the default error message.
+- Regression tests cover malformed API responses and non-JSON bodies (both return 503), the API key never appearing in logs, request parameters (coordinates and units), and `/favicon.ico` making no API call.
+
+```bash
+pip install -r requirements-dev.txt
+pytest --cov=main
+```
+
+Line coverage of `main.py` is 98%. `pytest.ini` sets `testpaths = tests` and `pythonpath = .` so `import main` works from the tests.
 
 ## Known limitations
 
@@ -176,12 +206,8 @@ These are good starting points for the exercises in [EXERCISE.md](EXERCISE.md).
 
 | Area | Limitation | Possible improvement |
 |---|---|---|
-| Error handling | Only the current-weather call checks the HTTP status. There are no request timeouts. A bad API key or network failure surfaces as a `KeyError` or an unhandled exception. | Call `raise_for_status()` on every request, set timeouts, and show a friendly error page. |
-| Security | The geocoding endpoint uses `http://`, so the API key is sent unencrypted. | Switch to `https://`. |
-| Testability | Three API calls inside one route function make tests mock `requests.get` three times, in order. | Extract an OpenWeather client function or module. |
 | Performance | Three blocking API calls per page view, no caching. | Cache results briefly per city. |
 | Icons | Conditions without a PNG show a broken image. | Map conditions with a `dict.get()` fallback. |
 | Templates | `<head>` markup and navigation are duplicated in all three templates. | Add a `base.html` and use `{% extends %}`. |
-| Consistency | The stylesheet uses `url_for('static', ...)`, but icon paths are hard-coded. | Use `url_for` for all static assets. |
-| Routing | `/<city>` accepts POST, but nothing posts to it. | Restrict it to GET. |
-| Tests | There is no test suite. | See Task 2 in [EXERCISE.md](EXERCISE.md). |
+| Consistency | The stylesheet uses `url_for('static', ...)`, but icon and image paths are hard-coded. | Use `url_for` for all static assets. |
+| Units | Metric units are hard-coded in the request and the template. | Make units configurable, or add a toggle. |

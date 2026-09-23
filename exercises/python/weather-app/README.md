@@ -3,6 +3,32 @@ This weather web app built with Flask and OpenWeather API displays the weather f
 
 For a walkthrough of how the app is structured, including request flow and Mermaid diagrams, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
+## Running locally
+1. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Create a `.env` file in the project root with your [OpenWeather API key](https://home.openweathermap.org/api_keys):
+   ```
+   OWM_API_KEY=your-api-key-here
+   ```
+4. Start the development server and open http://127.0.0.1:5000:
+   ```bash
+   python main.py
+   ```
+
+## Running tests
+The tests mock all OpenWeather calls, so they need no API key or network access.
+```bash
+pip install -r requirements-dev.txt
+pytest --cov=main
+```
+
 ## Screenshots (Desktop)
 <img src="/screenshots/weather_app_desktop_home_page_screenshot.png">
 <img src="/screenshots/weather_app_desktop_forecast_page_screenshot.png">
@@ -25,7 +51,7 @@ If I were to do this project again, there are a few changes I would make. I woul
 - [Article on retrieving HTML form data with Flask](https://www.geeksforgeeks.org/retrieving-html-from-data-using-flask/)
 - [StackOverflow post on building Flask app search bar](https://stackoverflow.com/questions/39960942/flask-app-search-bar)
 - [Article on storing API keys as environment variables](https://jonathansoma.com/lede/foundations-2019/classes/apis/keeping-api-keys-secret/)
-– [StackOverflow post on storing API keys in Heroku](https://stackoverflow.com/questions/71593743/storing-api-key-in-heroku)
+- [StackOverflow post on storing API keys in Heroku](https://stackoverflow.com/questions/71593743/storing-api-key-in-heroku)
 - [Making a footer stay at the bottom of the page both in mobile view and desktop view](https://stackoverflow.com/questions/51683107/making-a-footer-stay-at-the-bottom-of-the-page-both-in-mobile-view-and-desktop-v)
 
 ## Image Credit

@@ -136,3 +136,70 @@ def test_network_timeout_shows_service_error(mock_get, client):
 
 def test_error_page_default_message(client):
     assert "This city does not exist" in client.get("/error").get_data(as_text=True)
+
+
+# --- regressions from the test-gap and security reviews ---
+
+@pytest.mark.parametrize("responses", [
+    [[{}]],                                                 # geocoding result without lat/lon
+    [{"cod": "401", "message": "Invalid API key"}],         # geocoding error body that isn't a list
+    [GEO, {}],                                              # current weather missing every field
+    [GEO, {**CURRENT, "weather": []}],                      # empty weather list
+    [GEO, CURRENT, {}],                                     # forecast without "list"
+])
+@patch("main.requests.get")
+def test_malformed_api_response_shows_service_error(mock_get, client, responses):
+    defaults = [GEO, CURRENT, five_day_forecast()]
+    mock_get.side_effect = [fake_response(r) for r in responses + defaults[len(responses):]]
+    response = client.get("/london")
+    assert response.status_code == 503
+
+
+@patch("main.requests.get")
+def test_json_decode_error_shows_service_error(mock_get, client):
+    bad = fake_response()
+    bad.json.side_effect = requests.JSONDecodeError("Expecting value", "<html>", 0)
+    mock_get.return_value = bad
+    assert client.get("/london").status_code == 503
+
+
+@patch("main.requests.get")
+def test_api_key_not_logged_on_http_error(mock_get, client, caplog, monkeypatch):
+    monkeypatch.setattr(main, "api_key", "SECRETKEY123")
+    failing = fake_response(status=401)
+    failing.raise_for_status.side_effect = requests.HTTPError(
+        "401 Client Error: Unauthorized for url: https://api.openweathermap.org/geo/1.0/direct?appid=SECRETKEY123",
+        response=MagicMock(status_code=401))
+    mock_get.return_value = failing
+
+    client.get("/london")
+
+    assert "SECRETKEY123" not in caplog.text
+    assert "HTTPError (status 401)" in caplog.text
+
+
+def test_noon_forecast_uses_the_date_it_is_given_not_local_time():
+    # Server clock may already be on the 24th locally while it's still the 23rd in UTC
+    entries = [forecast_entry("2026-09-23", "12:00:00", 99), forecast_entry("2026-09-24", "12:00:00", 18)]
+    assert [d["temp"] for d in main.noon_forecast(entries, "2026-09-23")] == [18]
+
+
+def test_noon_forecast_with_short_or_empty_feed():
+    assert main.noon_forecast([], "2026-09-23") == []
+    entries = [forecast_entry("2026-09-24", "12:00:00", 18), forecast_entry("2026-09-25", "12:00:00", 19)]
+    assert len(main.noon_forecast(entries, "2026-09-23")) == 2
+
+
+@patch("main.requests.get")
+def test_favicon_does_not_call_the_api(mock_get, client):
+    assert client.get("/favicon.ico").status_code == 204
+    mock_get.assert_not_called()
+
+
+@patch("main.requests.get")
+def test_request_params_pass_coordinates_and_units(mock_get, client):
+    mock_get.side_effect = [fake_response(GEO), fake_response(CURRENT), fake_response(five_day_forecast())]
+    client.get("/london")
+    for call in mock_get.call_args_list[1:]:
+        params = call.kwargs["params"]
+        assert (params["lat"], params["lon"], params["units"]) == (51.5, -0.12, "metric")
