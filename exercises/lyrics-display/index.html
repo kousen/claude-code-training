@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lyrics Display</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* Stage-light palette: deep midnight violet, magenta spotlight, warm amber highlight */
+    :root {
+      --bg-1: #0d0620; --bg-2: #2a0f4a; --glow: #c026d3;
+      --card: rgb(255 255 255 / .06); --border: rgb(255 255 255 / .12);
+      --text: #f5f0ff; --muted: #b8a9d9;
+      --accent: #e040fb; --accent-2: #ffb347;
+      --serif: 'Fraunces', Georgia, serif; --sans: 'Inter', system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center;
+      padding: 1rem; font-family: var(--sans); color: var(--text);
+      background:
+        radial-gradient(ellipse at 50% -10%, color-mix(in srgb, var(--glow) 45%, transparent), transparent 60%),
+        linear-gradient(160deg, var(--bg-2), var(--bg-1) 70%);
+      background-attachment: fixed;
+    }
+    main {
+      width: 100%; max-width: 44rem; text-align: center;
+      padding: clamp(1.5rem, 5vw, 3rem) clamp(1.25rem, 5vw, 3rem);
+      background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem;
+      backdrop-filter: blur(16px); box-shadow: 0 20px 60px rgb(0 0 0 / .45);
+    }
+
+    header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    #number {
+      font-size: .75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent-2);
+    }
+    /* Equalizer bars: idle when paused, bouncing while playing */
+    .eq { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
+    .eq span {
+      width: 4px; height: 25%; border-radius: 2px;
+      background: linear-gradient(var(--accent-2), var(--accent));
+      transition: height .3s;
+    }
+    .playing .eq span { animation: bounce .9s ease-in-out infinite alternate; }
+    .eq span:nth-child(2) { animation-delay: -.3s; }
+    .eq span:nth-child(3) { animation-delay: -.6s; }
+    .eq span:nth-child(4) { animation-delay: -.15s; }
+    @keyframes bounce { from { height: 20%; } to { height: 100%; } }
+
+    #line {
+      font-family: var(--serif); font-optical-sizing: auto; font-style: italic; font-weight: 450;
+      font-size: clamp(1.5rem, 1rem + 2.5vw, 2.4rem); line-height: 1.35; letter-spacing: -.01em;
+      text-wrap: balance; min-height: 4.2em; margin: 1.5rem 0;
+      display: grid; place-items: center;
+      view-transition-name: lyric;
+    }
+    /* Crossfade + gentle rise between lines (View Transitions API) */
+    ::view-transition-old(lyric) { animation: out .25s ease-in both; }
+    ::view-transition-new(lyric) { animation: in .45s cubic-bezier(.2, .8, .2, 1) both; }
+    @keyframes out { to { opacity: 0; transform: translateY(-10px); filter: blur(4px); } }
+    @keyframes in { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
+
+    progress {
+      width: 100%; height: 6px; appearance: none; border: none; border-radius: 999px;
+      background: rgb(255 255 255 / .1); overflow: hidden;
+    }
+    progress::-webkit-progress-bar { background: rgb(255 255 255 / .1); }
+    progress::-webkit-progress-value {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .4s ease;
+    }
+    progress::-moz-progress-bar { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+    #counter {
+      color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums;
+      margin: .75rem 0 2rem;
+    }
+
+    .controls { display: flex; gap: .75rem; justify-content: center; }
+    button {
+      font: inherit; font-weight: 600; padding: .8rem 1.4rem; border-radius: 999px; cursor: pointer;
+      border: 1px solid var(--border); background: rgb(255 255 255 / .04); color: var(--text);
+      transition: background .2s, transform .1s, box-shadow .2s;
+    }
+    button:hover:not(:disabled) { background: rgb(255 255 255 / .12); }
+    button:active:not(:disabled) { transform: scale(.95); }
+    button:disabled { opacity: .3; cursor: default; }
+    button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+    #play {
+      min-width: 8rem; border: none; color: #fff;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 45%, transparent);
+    }
+    #play:hover:not(:disabled) { box-shadow: 0 8px 32px color-mix(in srgb, var(--accent) 65%, transparent); }
+
+    .hint { color: var(--muted); font-size: .8rem; margin: 1.5rem 0 0; }
+    kbd {
+      font: 600 .75rem var(--sans); padding: .15rem .45rem; border-radius: .35rem;
+      border: 1px solid var(--border); border-bottom-width: 2px; background: rgb(255 255 255 / .06);
+    }
+    @media (hover: none) { .hint { display: none; } } /* no keyboard hint on touch devices */
+
+    @media (max-width: 480px) {
+      .controls { flex-wrap: wrap; }
+      #play { order: -1; flex-basis: 100%; }  /* big Play on top, Prev/Next side by side below */
+      #prev, #next { flex: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
+        animation: none !important; transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="app">
+    <header>
+      <span id="number">—</span>
+      <div class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    </header>
+    <p id="line" aria-live="polite">Loading…</p>
+    <progress id="progress" value="0" max="1"></progress>
+    <p id="counter"></p>
+    <div class="controls">
+      <button id="prev" aria-keyshortcuts="ArrowLeft">◀ Previous</button>
+      <button id="play" aria-keyshortcuts="Space">▶ Play</button>
+      <button id="next" aria-keyshortcuts="ArrowRight">Next ▶</button>
+    </div>
+    <p class="hint"><kbd>Space</kbd> play/pause · <kbd>←</kbd> <kbd>→</kbd> previous/next</p>
+  </main>
+  <script>
+    const DELAY_MS = 2000;
+    const $ = id => document.getElementById(id);
+    let lines = [], index = 0, timer = null, shown = -1;
+
+    function render() {
+      if (index !== shown) { // transition only on actual line changes, not Play/Pause toggles
+        const swap = () => { $('line').textContent = lines[index]; };
+        // Native View Transitions API; browsers without it just swap instantly
+        // Rapid key presses skip in-flight transitions; the swap still happens, so ignore the rejection
+        document.startViewTransition ? document.startViewTransition(swap).ready.catch(() => {}) : swap();
+        shown = index;
+      }
+      $('number').textContent = `№ ${String(index + 1).padStart(2, '0')}`;
+      $('counter').textContent = `Line ${index + 1} of ${lines.length}`;
+      $('progress').max = lines.length;
+      $('progress').value = index + 1;
+      $('prev').disabled = index === 0;
+      $('next').disabled = index === lines.length - 1;
+      $('play').textContent = timer ? '❚❚ Pause' : '▶ Play';
+      $('app').classList.toggle('playing', !!timer);
+    }
+
+    function go(delta) {
+      index = Math.min(Math.max(index + delta, 0), lines.length - 1);
+      render();
+    }
+
+    function stop() { clearInterval(timer); timer = null; render(); }
+
+    function togglePlay() {
+      if (timer) return stop();
+      if (index === lines.length - 1) index = 0; // replay from the top
+      timer = setInterval(() => {
+        if (index === lines.length - 1) return stop(); // Stops at the end; to loop instead, set index = -1
+        go(1);
+      }, DELAY_MS);
+      render();
+    }
+
+    // Manual navigation cancels auto-play so the two don't fight
+    $('prev').onclick = () => { if (timer) stop(); go(-1); };
+    $('next').onclick = () => { if (timer) stop(); go(1); };
+    $('play').onclick = togglePlay;
+
+    const KEYS = { ' ': () => $('play').click(), ArrowRight: () => $('next').click(), ArrowLeft: () => $('prev').click() };
+    document.addEventListener('keydown', e => {
+      const action = KEYS[e.key];
+      if (!action || e.metaKey || e.ctrlKey || e.altKey || !lines.length) return; // leave browser shortcuts alone
+      e.preventDefault(); // stops page scroll, and stops Space also "clicking" whichever button has focus
+      if (!e.repeat) action(); // holding Space shouldn't machine-gun play/pause
+    });
+
+    fetch('lyrics.txt')
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(text => {
+        lines = text.split(/\r?\n/).filter(l => l.trim()); // skip blank stanza breaks
+        if (!lines.length) throw new Error('lyrics.txt is empty');
+        render();
+      })
+      .catch(err => {
+        $('line').textContent = `Could not load lyrics.txt (${err.message}). Serve this folder over HTTP.`;
+        document.querySelectorAll('button').forEach(b => b.disabled = true);
+      });
+  </script>
+</body>
+</html>
