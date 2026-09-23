@@ -41,6 +41,8 @@ There is no build, lint or `package.json`.
 - **`load(text)` and `fail(message)`** are the only ways content changes. `load` parses first,
   so a bad file throws before any state changes. `fail` clears the title, ticks and numeral and
   disables the controls. `render()` re-enables Play.
+  The startup `fetch('lyrics.txt')` is ignored once the user has picked a file (`picked` flag),
+  so a slow `lyrics.txt` can't overwrite or error over their choice.
 - **The margin numeral is a CSS counter** (`counter-set` from JS, `lower-roman` in CSS). The
   `.verse.blank` class hides it before a load or after a failure, and is removed inside the view-
   transition swap so the old snapshot never shows "0.".
