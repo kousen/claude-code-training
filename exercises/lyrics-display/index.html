@@ -45,9 +45,11 @@
       transition: height .3s;
     }
     .playing .eq span { animation: bounce .9s ease-in-out infinite alternate; }
-    .eq span:nth-child(2) { animation-delay: -.3s; }
-    .eq span:nth-child(3) { animation-delay: -.6s; }
-    .eq span:nth-child(4) { animation-delay: -.15s; }
+    /* Uneven resting heights so the paused bars still read as an equalizer, not a "⋯" menu */
+    .eq span:nth-child(1) { height: 45%; }
+    .eq span:nth-child(2) { height: 80%; animation-delay: -.3s; }
+    .eq span:nth-child(3) { height: 60%; animation-delay: -.6s; }
+    .eq span:nth-child(4) { height: 35%; animation-delay: -.15s; }
     @keyframes bounce { from { height: 20%; } to { height: 100%; } }
 
     #line {
@@ -101,6 +103,18 @@
     }
     @media (hover: none) { .hint { display: none; } } /* no keyboard hint on touch devices */
 
+    #title {
+      font-family: var(--serif); font-optical-sizing: auto; font-weight: 600;
+      font-size: clamp(1.1rem, .9rem + 1vw, 1.4rem); letter-spacing: .01em;
+      margin: 0 0 1.5rem; color: var(--muted);
+    }
+    button.link {
+      margin-top: 1rem; padding: .35rem .75rem; border: none; background: none;
+      color: var(--muted); font-size: .8rem; font-weight: 500;
+      text-decoration: underline; text-underline-offset: 3px;
+    }
+    button.link:hover { color: var(--text); background: none; }
+
     @media (max-width: 480px) {
       .controls { flex-wrap: wrap; }
       #play { order: -1; flex-basis: 100%; }  /* big Play on top, Prev/Next side by side below */
@@ -115,6 +129,7 @@
 </head>
 <body>
   <main id="app">
+    <h1 id="title" hidden></h1>
     <header>
       <span id="number">—</span>
       <div class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
@@ -128,9 +143,11 @@
       <button id="next" aria-keyshortcuts="ArrowRight">Next ▶</button>
     </div>
     <p class="hint"><kbd>Space</kbd> play/pause · <kbd>←</kbd> <kbd>→</kbd> previous/next</p>
+    <button id="open" class="link">Open lyrics file…</button>
+    <input type="file" id="file" accept=".txt,text/plain" hidden>
   </main>
+  <script src="lyrics.js"></script>
   <script>
-    const DELAY_MS = 2000;
     const $ = id => document.getElementById(id);
     let lines = [], index = 0, timer = null, shown = -1;
 
@@ -148,6 +165,7 @@
       $('progress').value = index + 1;
       $('prev').disabled = index === 0;
       $('next').disabled = index === lines.length - 1;
+      $('play').disabled = false; // may have been disabled by an earlier failed load
       $('play').textContent = timer ? '❚❚ Pause' : '▶ Play';
       $('app').classList.toggle('playing', !!timer);
     }
@@ -157,15 +175,21 @@
       render();
     }
 
-    function stop() { clearInterval(timer); timer = null; render(); }
+    function stop() { clearTimeout(timer); timer = null; render(); }
+
+    // A chain of timeouts rather than setInterval, because each line waits a different amount of time
+    function scheduleNext() {
+      timer = setTimeout(() => {
+        if (index === lines.length - 1) return stop(); // Stops at the end; to loop instead, set index = -1
+        go(1);
+        scheduleNext();
+      }, durationFor(lines[index]));
+    }
 
     function togglePlay() {
       if (timer) return stop();
       if (index === lines.length - 1) index = 0; // replay from the top
-      timer = setInterval(() => {
-        if (index === lines.length - 1) return stop(); // Stops at the end; to loop instead, set index = -1
-        go(1);
-      }, DELAY_MS);
+      scheduleNext();
       render();
     }
 
@@ -182,17 +206,39 @@
       if (!e.repeat) action(); // holding Space shouldn't machine-gun play/pause
     });
 
+    function load(text) {
+      const parsed = parseLyrics(text); // throws on empty input, before any state changes
+      clearTimeout(timer); timer = null;
+      lines = parsed.lines; index = 0; shown = -1;
+      const title = parsed.title;
+      $('title').textContent = title;
+      $('title').hidden = !title;
+      document.title = title ? `${title} · Lyrics Display` : 'Lyrics Display';
+      render();
+    }
+
+    function fail(message) {
+      clearTimeout(timer); timer = null; lines = [];
+      $('line').textContent = message;
+      $('title').hidden = true; // don't leave the previous song's details on screen
+      $('number').textContent = '—'; $('counter').textContent = ''; $('progress').value = 0;
+      document.title = 'Lyrics Display';
+      document.querySelectorAll('.controls button').forEach(b => b.disabled = true);
+    }
+
+    // The file picker works even when the page is opened from file://, where fetch is blocked
+    $('open').onclick = () => $('file').click();
+    $('file').onchange = async () => {
+      const file = $('file').files[0];
+      if (!file) return;
+      try { load(await file.text()); } catch (err) { fail(`Could not read ${file.name} (${err.message}).`); }
+      $('file').value = ''; // so choosing the same file again still fires "change"
+    };
+
     fetch('lyrics.txt')
       .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-      .then(text => {
-        lines = text.split(/\r?\n/).filter(l => l.trim()); // skip blank stanza breaks
-        if (!lines.length) throw new Error('lyrics.txt is empty');
-        render();
-      })
-      .catch(err => {
-        $('line').textContent = `Could not load lyrics.txt (${err.message}). Serve this folder over HTTP.`;
-        document.querySelectorAll('button').forEach(b => b.disabled = true);
-      });
+      .then(load)
+      .catch(err => fail(`Could not load lyrics.txt (${err.message}). Use "Open lyrics file…" below, or serve this folder over HTTP.`));
   </script>
 </body>
 </html>
