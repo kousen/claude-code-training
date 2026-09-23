@@ -7,6 +7,17 @@ This is a reference version of **Lab 0** (building a project from scratch). In t
 their own version in an empty directory, so theirs will differ. It's also where the
 [`lyrics-trainer`](../javascript/lyrics-trainer) project started.
 
+## Design
+
+The look is a **broadside**, styled after a single printed sheet. It uses warm paper, black ink and
+one printer's red, with the lyric set in IM Fell English, a revival of 17th-century type.
+- The title and author form a running head over a double rule. A title written as
+  `Song — Artist` is split between the left and right sides.
+- The line number hangs in the margin as a red roman numeral (`iii.`), drawn by a CSS counter with
+  `lower-roman`, so no JavaScript converts the numbers.
+- The next line is previewed in italic below the current one.
+- A row of tick marks, one per line, fills in with ink as the song goes on.
+
 ## Running it
 
 Either of these works:
@@ -16,7 +27,7 @@ Either of these works:
   python3 -m http.server 8000
   # then open http://localhost:8000
   ```
-- **Double-click `index.html`**, then click **Open lyrics file…** and choose a `.txt` file.
+- **Double-click `index.html`**, then click **Open another text…** and choose a `.txt` file.
   Browsers block pages opened from disk (`file://`) from fetching `lyrics.txt`,
   but a file you choose yourself is read directly.
 
@@ -84,7 +95,9 @@ and was checked by hand in a browser.
 
 ## Browser notes
 
-- Line changes fade using the **View Transitions API**. Browsers without it swap lines instantly.
+- Line changes crossfade using the **View Transitions API**. Browsers without it swap lines instantly.
 - Animations are turned off when the system's **reduce motion** setting is on.
-- Fonts (Fraunces, Inter) load from Google Fonts. Offline, the page falls back to Georgia and the
-  system sans-serif font.
+- Fonts (IM Fell English, IM Fell English SC, EB Garamond) load from Google Fonts. Offline, the
+  page falls back to Georgia.
+- IM Fell uses old-style figures, so numbers sit like lower-case letters and "13" can look like
+  "i3". That's authentic to the period, but not ideal for projection.

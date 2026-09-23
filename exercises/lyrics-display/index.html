@@ -6,119 +6,83 @@
   <title>Lyrics Display</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=EB+Garamond:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    /* Stage-light palette: deep midnight violet, magenta spotlight, warm amber highlight */
+    /* Broadside: a printed sheet — paper, black ink, one printer's red */
     :root {
-      --bg-1: #0d0620; --bg-2: #2a0f4a; --glow: #c026d3;
-      --card: rgb(255 255 255 / .06); --border: rgb(255 255 255 / .12);
-      --text: #f5f0ff; --muted: #b8a9d9;
-      --accent: #e040fb; --accent-2: #ffb347;
-      --serif: 'Fraunces', Georgia, serif; --sans: 'Inter', system-ui, sans-serif;
+      --paper: #F3ECDF; --ink: #1B1712; --red: #A4251C; --muted: #5E5448; --faint: #CFC4B1;
+      --fell: 'IM Fell English', Georgia, serif;
+      --fell-sc: 'IM Fell English SC', Georgia, serif;
+      --garamond: 'EB Garamond', Georgia, serif;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center;
-      padding: 1rem; font-family: var(--sans); color: var(--text);
-      background:
-        radial-gradient(ellipse at 50% -10%, color-mix(in srgb, var(--glow) 45%, transparent), transparent 60%),
-        linear-gradient(160deg, var(--bg-2), var(--bg-1) 70%);
-      background-attachment: fixed;
+      padding: 1rem; background: var(--paper); color: var(--ink); font-family: var(--garamond);
     }
     main {
-      width: 100%; max-width: 44rem; text-align: center;
-      padding: clamp(1.5rem, 5vw, 3rem) clamp(1.25rem, 5vw, 3rem);
-      background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem;
-      backdrop-filter: blur(16px); box-shadow: 0 20px 60px rgb(0 0 0 / .45);
+      width: 100%; max-width: 60rem; min-width: 0; min-height: min(37.5rem, calc(100dvh - 2rem));
+      display: flex; flex-direction: column; padding: clamp(1.5rem, 5vw, 3rem) clamp(1.25rem, 6vw, 4.5rem) 2.5rem;
     }
 
-    header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    #number {
-      font-size: .75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-      color: var(--accent-2);
+    /* Running head with a double rule under it */
+    header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .25rem 1.5rem;
+      padding-bottom: .6rem; border-bottom: 1px solid var(--ink);
+      font-family: var(--fell-sc); font-size: 1.125rem; letter-spacing: .04em;
     }
-    /* Equalizer bars: idle when paused, bouncing while playing */
-    .eq { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
-    .eq span {
-      width: 4px; height: 25%; border-radius: 2px;
-      background: linear-gradient(var(--accent-2), var(--accent));
-      transition: height .3s;
-    }
-    .playing .eq span { animation: bounce .9s ease-in-out infinite alternate; }
-    /* Uneven resting heights so the paused bars still read as an equalizer, not a "⋯" menu */
-    .eq span:nth-child(1) { height: 45%; }
-    .eq span:nth-child(2) { height: 80%; animation-delay: -.3s; }
-    .eq span:nth-child(3) { height: 60%; animation-delay: -.6s; }
-    .eq span:nth-child(4) { height: 35%; animation-delay: -.15s; }
-    @keyframes bounce { from { height: 20%; } to { height: 100%; } }
+    header h1 { margin: 0; font: inherit; }
+    .double-rule { height: 3px; border-bottom: 1px solid var(--ink); }
 
-    #line {
-      font-family: var(--serif); font-optical-sizing: auto; font-style: italic; font-weight: 450;
-      font-size: clamp(1.5rem, 1rem + 2.5vw, 2.4rem); line-height: 1.35; letter-spacing: -.01em;
-      text-wrap: balance; min-height: 4.2em; margin: 1.5rem 0;
-      display: grid; place-items: center;
-      view-transition-name: lyric;
+    /* The line number hangs in the margin as a red roman numeral, set by a CSS counter */
+    .verse {
+      flex-grow: 1; display: grid; grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
+      column-gap: 1rem; align-items: center; padding: 2rem 0;
+      view-transition-name: verse;
     }
-    /* Crossfade + gentle rise between lines (View Transitions API) */
-    ::view-transition-old(lyric) { animation: out .25s ease-in both; }
-    ::view-transition-new(lyric) { animation: in .45s cubic-bezier(.2, .8, .2, 1) both; }
-    @keyframes out { to { opacity: 0; transform: translateY(-10px); filter: blur(4px); } }
-    @keyframes in { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
+    #number { font-family: var(--fell); font-style: italic; font-size: 2.25rem; color: var(--red); }
+    #number::before { content: counter(line, lower-roman) "."; }
+    .verse.blank #number::before { content: none; } /* before load or after a failed one */
+    #line { margin: 0; font-family: var(--fell); font-size: clamp(2rem, 1.1rem + 3.4vw, 3.625rem); line-height: 1.12; }
+    #upcoming { margin: 1.4rem 0 0; font-family: var(--fell); font-style: italic; font-size: clamp(1.1rem, 1rem + .5vw, 1.45rem); color: var(--muted); min-height: 1.4em; }
+    ::view-transition-old(verse), ::view-transition-new(verse) { animation-duration: .3s; }
 
-    progress {
-      width: 100%; height: 6px; appearance: none; border: none; border-radius: 999px;
-      background: rgb(255 255 255 / .1); overflow: hidden;
-    }
-    progress::-webkit-progress-bar { background: rgb(255 255 255 / .1); }
-    progress::-webkit-progress-value {
-      background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .4s ease;
-    }
-    progress::-moz-progress-bar { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-    #counter {
-      color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums;
-      margin: .75rem 0 2rem;
-    }
+    /* One tick per line: inked up to the current line */
+    .progress { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    #ticks { flex-grow: 1; display: flex; gap: 6px; }
+    #ticks span { flex-grow: 1; height: 3px; background: var(--faint); transition: background .3s; }
+    #ticks span.done { background: var(--ink); }
+    #counter { font-family: var(--fell-sc); font-size: 1.0625rem; white-space: nowrap; }
 
-    .controls { display: flex; gap: .75rem; justify-content: center; }
+    footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
+    .controls { display: flex; gap: .75rem; }
     button {
-      font: inherit; font-weight: 600; padding: .8rem 1.4rem; border-radius: 999px; cursor: pointer;
-      border: 1px solid var(--border); background: rgb(255 255 255 / .04); color: var(--text);
-      transition: background .2s, transform .1s, box-shadow .2s;
+      height: 2.875rem; padding: 0 1.25rem; display: inline-flex; align-items: center; gap: .6rem;
+      border: 1px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink);
+      font-family: var(--fell-sc); font-size: 1.1875rem; cursor: pointer; transition: background .15s;
     }
-    button:hover:not(:disabled) { background: rgb(255 255 255 / .12); }
-    button:active:not(:disabled) { transform: scale(.95); }
-    button:disabled { opacity: .3; cursor: default; }
-    button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
-    #play {
-      min-width: 8rem; border: none; color: #fff;
-      background: linear-gradient(135deg, var(--accent), #7c3aed);
-      box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 45%, transparent);
-    }
-    #play:hover:not(:disabled) { box-shadow: 0 8px 32px color-mix(in srgb, var(--accent) 65%, transparent); }
+    button:hover:not(:disabled) { background: rgb(27 23 18 / .07); }
+    button:disabled { opacity: .35; cursor: default; }
+    button:focus-visible, a:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+    #play { min-width: 8.5rem; justify-content: center; background: var(--ink); color: var(--paper); }
+    #play:hover:not(:disabled) { background: #3A322A; }
+    button svg { flex-shrink: 0; }
 
-    .hint { color: var(--muted); font-size: .8rem; margin: 1.5rem 0 0; }
-    kbd {
-      font: 600 .75rem var(--sans); padding: .15rem .45rem; border-radius: .35rem;
-      border: 1px solid var(--border); border-bottom-width: 2px; background: rgb(255 255 255 / .06);
+    .aside { display: flex; flex-direction: column; align-items: flex-end; gap: .25rem; font-size: 1rem; color: var(--muted); }
+    .hint { margin: 0; }
+    #open {
+      height: auto; padding: 0; border: none; background: none; color: var(--red);
+      font-family: var(--garamond); font-size: 1rem; text-decoration: underline; text-underline-offset: 3px;
     }
+    #open:hover { background: none; color: #7A1A13; }
     @media (hover: none) { .hint { display: none; } } /* no keyboard hint on touch devices */
 
-    #title {
-      font-family: var(--serif); font-optical-sizing: auto; font-weight: 600;
-      font-size: clamp(1.1rem, .9rem + 1vw, 1.4rem); letter-spacing: .01em;
-      margin: 0 0 1.5rem; color: var(--muted);
-    }
-    button.link {
-      margin-top: 1rem; padding: .35rem .75rem; border: none; background: none;
-      color: var(--muted); font-size: .8rem; font-weight: 500;
-      text-decoration: underline; text-underline-offset: 3px;
-    }
-    button.link:hover { color: var(--text); background: none; }
-
-    @media (max-width: 480px) {
-      .controls { flex-wrap: wrap; }
-      #play { order: -1; flex-basis: 100%; }  /* big Play on top, Prev/Next side by side below */
-      #prev, #next { flex: 1; }
+    @media (max-width: 540px) {
+      .verse { grid-template-columns: minmax(0, 1fr); row-gap: .5rem; } /* numeral sits above the line */
+      .controls { width: 100%; flex-wrap: wrap; }
+      .controls button { flex: 1; justify-content: center; }
+      #play { order: -1; flex-basis: 100%; } /* big Play on top, Previous/Next side by side below */
+      .aside { align-items: flex-start; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
@@ -128,46 +92,62 @@
   </style>
 </head>
 <body>
-  <main id="app">
-    <h1 id="title" hidden></h1>
+  <main>
     <header>
-      <span id="number">—</span>
-      <div class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <h1 id="title">Lyrics Display</h1>
+      <span id="byline"></span>
     </header>
-    <p id="line" aria-live="polite">Loading…</p>
-    <progress id="progress" value="0" max="1"></progress>
-    <p id="counter"></p>
-    <div class="controls">
-      <button id="prev" aria-keyshortcuts="ArrowLeft">◀ Previous</button>
-      <button id="play" aria-keyshortcuts="Space">▶ Play</button>
-      <button id="next" aria-keyshortcuts="ArrowRight">Next ▶</button>
+    <div class="double-rule"></div>
+    <div class="verse blank">
+      <div id="number" aria-hidden="true"></div>
+      <div>
+        <p id="line" aria-live="polite">Loading…</p>
+        <p id="upcoming"></p>
+      </div>
     </div>
-    <p class="hint"><kbd>Space</kbd> play/pause · <kbd>←</kbd> <kbd>→</kbd> previous/next</p>
-    <button id="open" class="link">Open lyrics file…</button>
-    <input type="file" id="file" accept=".txt,text/plain" hidden>
+    <div class="progress">
+      <div id="ticks" aria-hidden="true"></div>
+      <span id="counter"></span>
+    </div>
+    <footer>
+      <div class="controls">
+        <button id="prev" aria-keyshortcuts="ArrowLeft"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Previous</button>
+        <button id="play" aria-keyshortcuts="Space">Play</button>
+        <button id="next" aria-keyshortcuts="ArrowRight">Next<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="m5 2 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      </div>
+      <div class="aside">
+        <p class="hint"><i>Space</i> to play · <i>← →</i> to turn the line</p>
+        <button id="open">Open another text…</button>
+        <input type="file" id="file" accept=".txt,text/plain" hidden>
+      </div>
+    </footer>
   </main>
   <script src="lyrics.js"></script>
   <script>
     const $ = id => document.getElementById(id);
+    const PLAY_ICON = '<svg width="12" height="14" viewBox="0 0 12 14" aria-hidden="true"><path d="M1 1v12l10-6z" fill="currentColor"/></svg>';
+    const PAUSE_ICON = '<svg width="12" height="14" viewBox="0 0 12 14" aria-hidden="true"><path d="M1 1h3.5v12H1zM7.5 1H11v12H7.5z" fill="currentColor"/></svg>';
     let lines = [], index = 0, timer = null, shown = -1;
 
     function render() {
       if (index !== shown) { // transition only on actual line changes, not Play/Pause toggles
-        const swap = () => { $('line').textContent = lines[index]; };
+        const swap = () => {
+          $('line').textContent = lines[index];
+          $('upcoming').textContent = lines[index + 1] ?? '';
+          $('number').style.counterSet = `line ${index + 1}`;
+          document.querySelector('.verse').classList.remove('blank');
+        };
         // Native View Transitions API; browsers without it just swap instantly
         // Rapid key presses skip in-flight transitions; the swap still happens, so ignore the rejection
         document.startViewTransition ? document.startViewTransition(swap).ready.catch(() => {}) : swap();
         shown = index;
       }
-      $('number').textContent = `№ ${String(index + 1).padStart(2, '0')}`;
+      [...$('ticks').children].forEach((tick, i) => tick.classList.toggle('done', i <= index));
       $('counter').textContent = `Line ${index + 1} of ${lines.length}`;
-      $('progress').max = lines.length;
-      $('progress').value = index + 1;
       $('prev').disabled = index === 0;
       $('next').disabled = index === lines.length - 1;
       $('play').disabled = false; // may have been disabled by an earlier failed load
-      $('play').textContent = timer ? '❚❚ Pause' : '▶ Play';
-      $('app').classList.toggle('playing', !!timer);
+      $('play').innerHTML = timer ? `${PAUSE_ICON}Pause` : `${PLAY_ICON}Play`;
     }
 
     function go(delta) {
@@ -206,23 +186,30 @@
       if (!e.repeat) action(); // holding Space shouldn't machine-gun play/pause
     });
 
+    // A title like "Song — Artist (Year)" is split across the running head
+    function showTitle(title) {
+      const [name, ...rest] = title.split(' — ');
+      $('title').textContent = name || 'Lyrics Display';
+      $('byline').textContent = rest.join(' — ');
+      document.title = title ? `${title} · Lyrics Display` : 'Lyrics Display';
+    }
+
     function load(text) {
       const parsed = parseLyrics(text); // throws on empty input, before any state changes
       clearTimeout(timer); timer = null;
       lines = parsed.lines; index = 0; shown = -1;
-      const title = parsed.title;
-      $('title').textContent = title;
-      $('title').hidden = !title;
-      document.title = title ? `${title} · Lyrics Display` : 'Lyrics Display';
+      $('ticks').replaceChildren(...lines.map(() => document.createElement('span')));
+      showTitle(parsed.title);
       render();
     }
 
     function fail(message) {
       clearTimeout(timer); timer = null; lines = [];
       $('line').textContent = message;
-      $('title').hidden = true; // don't leave the previous song's details on screen
-      $('number').textContent = '—'; $('counter').textContent = ''; $('progress').value = 0;
-      document.title = 'Lyrics Display';
+      $('upcoming').textContent = '';
+      document.querySelector('.verse').classList.add('blank');
+      $('ticks').replaceChildren(); $('counter').textContent = '';
+      showTitle(''); // don't leave the previous song's details on screen
       document.querySelectorAll('.controls button').forEach(b => b.disabled = true);
     }
 
@@ -238,7 +225,7 @@
     fetch('lyrics.txt')
       .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(load)
-      .catch(err => fail(`Could not load lyrics.txt (${err.message}). Use "Open lyrics file…" below, or serve this folder over HTTP.`));
+      .catch(err => fail(`Could not load lyrics.txt (${err.message}). Use "Open another text…" below, or serve this folder over HTTP.`));
   </script>
 </body>
 </html>
