@@ -1,6 +1,6 @@
 allowBuilds:
-  esbuild: set this to true or false
-  playwright-chromium: set this to true or false
+  esbuild: true
+  playwright-chromium: true
 ignoredBuiltDependencies:
   - esbuild
   - playwright-chromium
