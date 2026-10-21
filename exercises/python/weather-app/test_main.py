@@ -1,7 +1,7 @@
 """Characterization tests for the weather app.
 
 Every route except ``/`` and ``/error`` makes three live HTTP calls through
-``requests.get``.  We patch ``main.requests.get`` (patch where it's *used*)
+``main.SESSION.get``.  We patch that attribute (patch where it's *used*)
 with a dispatcher keyed on the endpoint URL, so no network is touched.
 """
 import datetime
@@ -24,7 +24,7 @@ def fake_response(payload, status=200):
     resp.status_code = status
     resp.json.return_value = payload
     if status >= 400:
-        resp.raise_for_status.side_effect = requests.HTTPError(f"{status} error")
+        resp.raise_for_status.side_effect = requests.HTTPError(f"{status} error", response=resp)
     else:
         resp.raise_for_status.return_value = None
     return resp
@@ -80,14 +80,16 @@ def api():
     def dispatch(url, params=None, **kwargs):
         return responses[url]
 
-    with patch.object(main.requests, "get", side_effect=dispatch) as mock_get:
+    with patch.object(main.SESSION, "get", side_effect=dispatch) as mock_get:
         mock_get.responses = responses
         yield mock_get
 
 
 @pytest.fixture
 def frozen_clock():
-    with patch.object(main, "datetime", types.SimpleNamespace(datetime=FrozenDateTime)):
+    # Keep every other attribute (timedelta, date, ...) so only the clock changes.
+    fake_module = types.SimpleNamespace(**{**vars(datetime), "datetime": FrozenDateTime})
+    with patch.object(main, "datetime", fake_module):
         yield
 
 
@@ -178,13 +180,27 @@ def assert_redirects_to_unavailable(resp):
     assert resp.headers["Location"].endswith("/error?reason=unavailable")
 
 
-def test_geocoding_http_error_redirects(client, api):
+def test_geocoding_401_redirects_with_auth_reason(client, api):
     """A 401 on geocoding used to surface as a KeyError on the dict payload."""
     api.responses[main.GEOCODING_API_ENDPOINT] = fake_response(
         {"cod": 401, "message": "Invalid API key"}, status=401
     )
-    assert_redirects_to_unavailable(client.get("/london"))
+    resp = client.get("/london")
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/error?reason=auth")
     assert api.call_count == 1
+
+
+def test_error_page_auth_message(client):
+    resp = client.get("/error?reason=auth")
+    assert b"rejected this app" in resp.data
+    assert b"OWM_API_KEY" in resp.data
+
+
+def test_malformed_weather_payload_redirects(client, api):
+    """200 OK with an empty ``weather`` list used to escape the try block as a 500."""
+    api.responses[main.OWM_ENDPOINT] = fake_response({**WEATHER_OK, "weather": []})
+    assert_redirects_to_unavailable(client.get("/london"))
 
 
 def test_weather_http_error_redirects(client, api):

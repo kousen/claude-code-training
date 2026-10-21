@@ -75,7 +75,7 @@ This is a simple Python weather application that fetches weather data from an AP
 
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements-dev.txt   # includes pytest for the test suite
    ```
 
 3. Set up your API key (if required):
