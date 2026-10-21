@@ -120,45 +120,35 @@
   <p id="hint">Space: play / pause &nbsp;·&nbsp; ← → : previous / next</p>
 </main>
 
-<script>
-let lines = [], i = 0, timer = null;
+<script type="module">
+import { parseLines, createPlayer, handleKey } from './player.js';
+
 const $ = id => document.getElementById(id);
+const lineEl = $('line');
 
-function show() {
-  const el = $('line');
-  el.classList.remove('in');
-  void el.offsetWidth;                 // restart the CSS animation
-  el.textContent = lines[i];
-  el.classList.add('in');
-  $('counter').textContent = `${i + 1} / ${lines.length}`;
-  $('progress').firstElementChild.style.width = `${(i + 1) / lines.length * 100}%`;
-  $('prev').disabled = i === 0;
-  $('next').disabled = i === lines.length - 1;
+function render(player) {
+  lineEl.classList.remove('in');
+  void lineEl.offsetWidth;                 // restart the CSS animation
+  lineEl.textContent = player.line;
+  lineEl.classList.add('in');
+  $('counter').textContent = `${player.index + 1} / ${player.length}`;
+  $('progress').firstElementChild.style.width = `${(player.index + 1) / player.length * 100}%`;
+  $('prev').disabled = player.index === 0;
+  $('next').disabled = player.index === player.length - 1;
+  $('play').textContent = player.isPlaying ? '❚❚ Pause' : '▶ Play';
 }
-
-function next() { if (i < lines.length - 1) { i++; show(); } else stop(); }
-function prev() { if (i > 0) { i--; show(); } }
-
-function play() {
-  if (timer) return stop();
-  if (i === lines.length - 1) { i = 0; show(); }   // restart from top if already at the end
-  timer = setInterval(next, 2000);
-  $('play').textContent = '❚❚ Pause';
-}
-function stop() { clearInterval(timer); timer = null; $('play').textContent = '▶ Play'; }
-
-$('prev').onclick = prev;
-$('next').onclick = next;
-$('play').onclick = play;
-document.onkeydown = e => {
-  const action = { ArrowLeft: prev, ArrowRight: next, ' ': play }[e.key];
-  if (action) { e.preventDefault(); action(); }   // stop Space from also clicking a focused button
-};
 
 fetch('lyrics.txt')
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-  .then(t => { lines = t.split('\n').filter(l => l.trim()); show(); })
-  .catch(e => $('line').textContent = `Could not load lyrics.txt (${e.message}). Serve this folder over HTTP.`);
+  .then(text => {
+    const player = createPlayer(parseLines(text), { onChange: () => render(player) });
+    $('prev').onclick = player.prev;
+    $('next').onclick = player.next;
+    $('play').onclick = player.play;
+    document.onkeydown = e => handleKey(player, e);
+    render(player);
+  })
+  .catch(e => lineEl.textContent = `Could not load lyrics.txt (${e.message}). Serve this folder over HTTP.`);
 </script>
 </body>
 </html>
