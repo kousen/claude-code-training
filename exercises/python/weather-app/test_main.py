@@ -41,7 +41,7 @@ WEATHER_OK = {
     "weather": [{"main": "Rain"}],
     "wind": {"speed": 3.4},
 }
-FORECAST_OK = {"list": [
+FORECAST_OK: dict[str, list[dict]] = {"list": [
     noon(21, temp=15, weather="Clear"),                     # today -> skipped
     {"dt_txt": "2026-10-22 09:00:00",                        # not noon -> skipped
      "main": {"temp": 9}, "weather": [{"main": "Fog"}]},
@@ -77,10 +77,10 @@ def api():
         main.OWM_FORECAST_ENDPOINT: fake_response(FORECAST_OK),
     }
 
-    def dispatch(url, params=None, **kwargs):
+    def dispatch(url, **_):
         return responses[url]
 
-    with patch.object(main.SESSION, "get", side_effect=dispatch) as mock_get:
+    with patch("main.SESSION.get", side_effect=dispatch) as mock_get:
         mock_get.responses = responses
         yield mock_get
 
@@ -89,7 +89,7 @@ def api():
 def frozen_clock():
     # Keep every other attribute (timedelta, date, ...) so only the clock changes.
     fake_module = types.SimpleNamespace(**{**vars(datetime), "datetime": FrozenDateTime})
-    with patch.object(main, "datetime", fake_module):
+    with patch("main.datetime", fake_module):
         yield
 
 
@@ -113,7 +113,7 @@ def test_home_post_redirects_to_city_route(client):
 # --------------------------------------------------------------------------- #
 def test_city_page_happy_path(client, api, frozen_clock):
     resp = client.get("/london")
-    html = resp.data.decode()
+    html = resp.get_data(as_text=True)
 
     assert resp.status_code == 200
     assert "London" in html                    # string.capwords
@@ -132,7 +132,7 @@ def test_city_page_happy_path(client, api, frozen_clock):
 
 
 def test_forecast_skips_today_and_non_noon_and_caps_at_four(client, api, frozen_clock):
-    html = client.get("/london").data.decode()
+    html = client.get("/london").get_data(as_text=True)
     # Order matters: today's label first, then the next four days.
     for label in ("Wed", "Thu", "Fri", "Sat", "Sun"):
         assert f"<p> {label} </p>" in html
@@ -146,7 +146,7 @@ def test_forecast_when_todays_noon_entry_is_absent(client, api, frozen_clock):
     api.responses[main.OWM_FORECAST_ENDPOINT] = fake_response(
         {"list": [e for e in FORECAST_OK["list"] if not e["dt_txt"].startswith("2026-10-21")]}
     )
-    html = client.get("/london").data.decode()
+    html = client.get("/london").get_data(as_text=True)
     for label in ("Thu", "Fri", "Sat", "Sun"):
         assert f"<p> {label} </p>" in html
     assert "<p> Mon </p>" not in html
