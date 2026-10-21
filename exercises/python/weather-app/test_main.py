@@ -124,8 +124,9 @@ def test_city_page_happy_path(client, api, frozen_clock):
     geo_call = api.call_args_list[0]
     assert geo_call.args[0] == main.GEOCODING_API_ENDPOINT
     assert geo_call.kwargs["params"]["q"] == "London"
-    assert api.call_args_list[1].args[1]["lat"] == 51.5
-    assert api.call_args_list[1].args[1]["units"] == "metric"
+    assert api.call_args_list[1].kwargs["params"]["lat"] == 51.5
+    assert api.call_args_list[1].kwargs["params"]["units"] == "metric"
+    assert all(c.kwargs["timeout"] == main.REQUEST_TIMEOUT for c in api.call_args_list)
 
 
 def test_forecast_skips_today_and_non_noon_and_caps_at_four(client, api, frozen_clock):
@@ -160,24 +161,51 @@ def test_unknown_city_redirects_to_error_page(client, api):
     assert api.call_count == 1                 # no weather calls after a miss
 
 
-def test_error_page_renders(client):
-    assert client.get("/error").status_code == 200
+def test_error_page_default_message(client):
+    resp = client.get("/error")
+    assert resp.status_code == 200
+    assert b"This city does not exist" in resp.data
 
 
-def test_geocoding_error_payload_crashes_with_keyerror(client, api):
-    """A 401 comes back as a dict, which is truthy, so ``location_data[0]`` blows up."""
+def test_error_page_unavailable_message(client):
+    resp = client.get("/error?reason=unavailable")
+    assert resp.status_code == 200
+    assert b"weather service is unavailable" in resp.data
+
+
+def assert_redirects_to_unavailable(resp):
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/error?reason=unavailable")
+
+
+def test_geocoding_http_error_redirects(client, api):
+    """A 401 on geocoding used to surface as a KeyError on the dict payload."""
     api.responses[main.GEOCODING_API_ENDPOINT] = fake_response(
         {"cod": 401, "message": "Invalid API key"}, status=401
     )
-    with pytest.raises(KeyError):
-        client.get("/london")
+    assert_redirects_to_unavailable(client.get("/london"))
+    assert api.call_count == 1
 
 
-def test_weather_http_error_propagates(client, api):
-    """Only the current-weather call runs raise_for_status; a 500 there is unhandled."""
+def test_weather_http_error_redirects(client, api):
     api.responses[main.OWM_ENDPOINT] = fake_response({}, status=500)
-    with pytest.raises(requests.HTTPError):
-        client.get("/london")
+    assert_redirects_to_unavailable(client.get("/london"))
+
+
+def test_forecast_http_error_redirects(client, api):
+    """Forecast used to skip raise_for_status entirely and fail later on a missing key."""
+    api.responses[main.OWM_FORECAST_ENDPOINT] = fake_response({}, status=502)
+    assert_redirects_to_unavailable(client.get("/london"))
+
+
+def test_timeout_redirects(client, api):
+    api.side_effect = requests.Timeout("read timed out")
+    assert_redirects_to_unavailable(client.get("/london"))
+
+
+def test_connection_error_redirects(client, api):
+    api.side_effect = requests.ConnectionError("dns failure")
+    assert_redirects_to_unavailable(client.get("/london"))
 
 
 def test_catch_all_route_treats_any_path_as_a_city(client, api):
