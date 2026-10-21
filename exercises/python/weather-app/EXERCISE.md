@@ -80,7 +80,7 @@ This is a simple Python weather application that fetches weather data from an AP
 
 3. Set up your API key (if required):
    ```bash
-   export WEATHER_API_KEY="your-api-key-here"
+   export OWM_API_KEY="your-api-key-here"
    ```
 
 ## Success Criteria
