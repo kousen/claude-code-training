@@ -8,9 +8,4 @@ allowBuilds:
 # slidev-component-progress pins an ancient @slidev/client (0.48.x) that
 # drags in old unocss/unhead/chokidar; align it with the real Slidev version.
 overrides:
-  "slidev-component-progress>@slidev/client": "^51.8.2"
-  # Slidev 51 ranges katex ^0.16; 53 moves to ^0.18.7, which is the patched line.
-  katex: "^0.18.7"
-  # fuse.js 7.5 returns every item for an empty query, so Slidev's Goto panel
-  # renders the full slide list on load. 7.1 is the last version that returns [].
-  fuse.js: "7.1.0"
+  "slidev-component-progress>@slidev/client": "^53.0.0"
