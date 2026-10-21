@@ -72,19 +72,19 @@ sequenceDiagram
         Note over F: keep the 12:00 slot for each<br/>of the next four days
         F-->>U: 200 city.html
     end
-    Note over F: Any timeout, connection error, 5xx,<br/>or unexpected payload → 302 /error?reason=unavailable
+    Note over F: Any timeout, connection error, non-401 HTTP error,<br/>or unexpected payload → 302 /error?reason=unavailable
 ```
 
 ### Notes on the design
 
 - **Geocoding first.** The current-weather and forecast endpoints take coordinates, so every lookup starts by resolving the city name. The app requests up to three matches but uses only the first.
 - **Forecast filtering.** The forecast endpoint returns 3-hour slots in UTC. The app keeps the 12:00 slot for each of the next four days and labels each one from its own date, so labels and temperatures cannot drift apart when today's noon slot is absent after 12:00 UTC.
-- **One HTTP helper.** `fetch_json` reuses a single `requests.Session`, applies a 3-second connect and 5-second read timeout, and calls `raise_for_status` on every response. Failures are logged with a traceback and redirected to the error page with a reason, so the user never sees a stack trace.
+- **One HTTP helper.** `fetch_json` reuses a single `requests.Session`, applies a 3-second connect and 5-second read timeout, and calls `raise_for_status` on every response. Failures are logged and redirected to the error page with a reason, so the user never sees a stack trace. The log lines carry only the status or exception type, never the exception text, because `requests` embeds the full URL, API key included, in its error messages.
 - **Temperatures are metric.** The `units=metric` parameter is set on both weather calls.
 
 ## Running locally
 
-Requires Python 3.11 or later and a free [OpenWeather API key](https://openweathermap.org/appid).
+Requires Python 3.10 or later and a free [OpenWeather API key](https://openweathermap.org/appid).
 
 ```bash
 python -m venv .venv
@@ -110,7 +110,7 @@ gunicorn main:app
 python -m pytest -q
 ```
 
-The suite in `test_main.py` covers every route without touching the network. A fixture patches the session's `get` method with a dispatcher keyed on endpoint URL, and a second fixture freezes the clock so the forecast filtering is deterministic. Tests cover the happy path, the forecast day-selection rules, unknown cities, the catch-all route, and each failure mode: HTTP errors on all three calls, timeouts, connection errors, a 401, and a 200 with an unexpected body.
+The suite in `test_main.py` covers every route without touching the network. A fixture patches the session's `get` method with a dispatcher keyed on endpoint URL, and a second fixture freezes the clock so the forecast filtering is deterministic. Tests cover the happy path, the forecast day-selection rules, unknown cities, empty searches, the catch-all route and the favicon exception to it, each failure mode (HTTP errors on all three calls, timeouts, connection errors, a 401, and a 200 with an unexpected body), and that upstream errors never write the API key to the log.
 
 ## Project layout
 
@@ -125,6 +125,8 @@ requirements.txt        Runtime deps: Flask, requests, python-dotenv, gunicorn
 requirements-dev.txt    Runtime deps plus pytest
 Procfile                gunicorn entry point for Heroku-style hosts
 EXERCISE.md             Lab instructions for the training course
+CLAUDE.md               Project notes for Claude Code sessions
+weather-app-wireframes.jpg  Original UI wireframes
 ```
 
 Weather icons are looked up by lowercasing the condition string OpenWeather returns, so `Clouds` renders `static/assets/clouds.png`. The set covers Clear, Clouds, Drizzle, Rain, Thunderstorm, Snow, Mist, Fog, Haze, Smoke, and Tornado.
@@ -133,7 +135,7 @@ Weather icons are looked up by lowercasing the condition string OpenWeather retu
 
 - **US city and state lookups fail.** OpenWeather reads the second comma-separated token as a country code, so `Austin, TX` returns nothing while `Austin, TX, US` works. Full state names such as `Austin, Texas` are silently ignored and only work when the intended city happens to be the first match.
 - **Ambiguous names pick the first result.** `Springfield` returns Illinois. The three results the app already requests could drive a disambiguation page.
-- **The city route is a catch-all.** Any unknown path, including `/favicon.ico`, is treated as a city name and triggers a geocoding call.
+- **The city route is a catch-all.** Any unknown path other than `/favicon.ico` is treated as a city name and triggers a geocoding call, so `/robots.txt` and scanner probes each cost an API call.
 - **No caching.** Each lookup makes three API calls. Coordinates for a given name never change, so the geocoding step is a natural candidate for `functools.lru_cache`.
 - **Forecast shows the noon temperature only,** not the daily low and high.
 

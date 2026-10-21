@@ -1,10 +1,11 @@
 """Characterization tests for the weather app.
 
-Every route except ``/`` and ``/error`` makes three live HTTP calls through
-``main.SESSION.get``.  We patch that attribute (patch where it's *used*)
-with a dispatcher keyed on the endpoint URL, so no network is touched.
+The ``/<city>`` route makes three live HTTP calls through ``main.SESSION.get``.
+We patch that attribute (patch where it's *used*) with a dispatcher keyed on
+the endpoint URL, so no network is touched.
 """
 import datetime
+import logging
 import types
 from unittest.mock import Mock, patch
 
@@ -70,7 +71,7 @@ def client():
 
 @pytest.fixture
 def api():
-    """Patch requests.get; tests override entries in ``api.responses`` as needed."""
+    """Patch ``main.SESSION.get``; tests override entries in ``api.responses`` as needed."""
     responses = {
         main.GEOCODING_API_ENDPOINT: fake_response(GEO_OK),
         main.OWM_ENDPOINT: fake_response(WEATHER_OK),
@@ -78,6 +79,8 @@ def api():
     }
 
     def dispatch(url, **_):
+        # AssertionError is not in main's caught tuple, so a wrong URL fails loudly
+        assert url in responses, f"unexpected URL {url}"
         return responses[url]
 
     with patch("main.SESSION.get", side_effect=dispatch) as mock_get:
@@ -133,7 +136,7 @@ def test_city_page_happy_path(client, api, frozen_clock):
 
 def test_forecast_skips_today_and_non_noon_and_caps_at_four(client, api, frozen_clock):
     html = client.get("/london").get_data(as_text=True)
-    # Order matters: today's label first, then the next four days.
+    # Today's label (from the current-weather block) plus the next four days.
     for label in ("Wed", "Thu", "Fri", "Sat", "Sun"):
         assert f"<p> {label} </p>" in html
     assert "<p> Mon </p>" not in html          # 26th cut by [:4]
@@ -153,7 +156,7 @@ def test_forecast_when_todays_noon_entry_is_absent(client, api, frozen_clock):
 
 
 # --------------------------------------------------------------------------- #
-# Error paths (current behavior, warts included)
+# Error paths
 # --------------------------------------------------------------------------- #
 def test_unknown_city_redirects_to_error_page(client, api):
     api.responses[main.GEOCODING_API_ENDPOINT] = fake_response([])
@@ -226,6 +229,40 @@ def test_connection_error_redirects(client, api):
 
 def test_catch_all_route_treats_any_path_as_a_city(client, api):
     api.responses[main.GEOCODING_API_ENDPOINT] = fake_response([])
-    resp = client.get("/favicon.ico")
+    resp = client.get("/robots.txt")
     assert resp.status_code == 302
-    assert api.call_args.kwargs["params"]["q"] == "Favicon.ico"
+    assert api.call_args.kwargs["params"]["q"] == "Robots.txt"
+
+
+def test_favicon_does_not_hit_the_api(client, api):
+    assert client.get("/favicon.ico").status_code == 404
+    assert api.call_count == 0
+
+
+@pytest.mark.parametrize("form", [{}, {"search": ""}, {"search": "   "}])
+def test_home_post_without_a_city_rerenders_form(client, api, form):
+    """Used to raise BuildError (500) when the field was missing."""
+    resp = client.post("/", data=form)
+    assert resp.status_code == 200
+    assert b'name="search"' in resp.data
+    assert api.call_count == 0
+
+
+def test_upstream_errors_never_log_the_api_key(client, api, caplog):
+    """requests embeds the full URL (appid included) in its exception text."""
+    leaky = "500 Server Error for url: https://x/?q=London&appid=SECRET-KEY-123"
+    resp = Mock(status_code=500)
+    resp.raise_for_status.side_effect = requests.HTTPError(leaky, response=resp)
+    api.responses[main.OWM_ENDPOINT] = resp
+    api.responses[main.OWM_FORECAST_ENDPOINT] = resp  # unreachable, but keep the dict complete
+
+    with caplog.at_level(logging.ERROR, logger=main.app.logger.name):
+        assert_redirects_to_unavailable(client.get("/london"))
+    assert "SECRET-KEY-123" not in caplog.text
+    assert "HTTP 500" in caplog.text
+
+    api.side_effect = requests.ConnectionError(f"Max retries exceeded with url: /?appid=SECRET-KEY-123")
+    with caplog.at_level(logging.ERROR, logger=main.app.logger.name):
+        assert_redirects_to_unavailable(client.get("/london"))
+    assert "SECRET-KEY-123" not in caplog.text
+    assert "ConnectionError" in caplog.text

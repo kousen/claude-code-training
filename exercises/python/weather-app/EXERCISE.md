@@ -69,8 +69,8 @@ This is a simple Python weather application that fetches weather data from an AP
 
 1. Create and activate a virtual environment:
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
 2. Install dependencies:
@@ -78,9 +78,9 @@ This is a simple Python weather application that fetches weather data from an AP
    pip install -r requirements-dev.txt   # includes pytest for the test suite
    ```
 
-3. Set up your API key (if required):
+3. Set your free [OpenWeather API key](https://openweathermap.org/appid). Without it the app starts but every lookup lands on the error page:
    ```bash
-   export OWM_API_KEY="your-api-key-here"
+   export OWM_API_KEY="your-api-key-here"   # or put OWM_API_KEY=... in a .env file
    ```
 
 ## Success Criteria

@@ -1,3 +1,9 @@
+"""Flask app that shows current weather and a four-day forecast for a city.
+
+Each lookup calls three OpenWeather endpoints: geocoding (city name to
+lat/lon), current weather, and the 5-day/3-hour forecast. The API key is read
+from the ``OWM_API_KEY`` environment variable, loaded from ``.env`` if present.
+"""
 import datetime
 import requests
 import string
@@ -31,15 +37,41 @@ def fetch_json(url, params):
 # Display home page and get city name entered into search form
 @app.route("/", methods=["GET", "POST"])
 def home():
+    """Render the search form, or redirect a submitted search to ``/<city>``.
+
+    Returns:
+        The rendered ``index.html`` on GET, or a 302 to :func:`get_weather` on POST.
+    """
     if request.method == "POST":
-        city = request.form.get("search")
-        return redirect(url_for("get_weather", city=city))
+        city = request.form.get("search", "").strip()
+        if city:
+            return redirect(url_for("get_weather", city=city))
     return render_template("index.html")
+
+
+# Browsers request this on every page load; without an explicit route it would
+# fall through to /<city> and spend an OpenWeather call on "Favicon.ico".
+@app.route("/favicon.ico")
+def favicon():
+    return "", 404
 
 
 # Display weather forecast for specific city using data from OpenWeather API
 @app.route("/<city>", methods=["GET", "POST"])
 def get_weather(city):
+    """Render the weather page for ``city``.
+
+    Geocodes the name, then fetches current conditions and the forecast. The
+    forecast keeps the 12:00 slot for each of the next four days.
+
+    Args:
+        city: City name from the URL; capitalized with ``string.capwords``.
+
+    Returns:
+        The rendered ``city.html``, or a 302 to :func:`error` when geocoding
+        finds nothing, the API key is rejected (``reason=auth``), or any call
+        fails or returns an unexpected payload (``reason=unavailable``).
+    """
     # Format city name and get current date to display on page
     city_name = string.capwords(city)
     today = datetime.datetime.now()
@@ -88,15 +120,18 @@ def get_weather(city):
             for item in forecast_data["list"]
             if item["dt_txt"].endswith("12:00:00") and not item["dt_txt"].startswith(today_str)
         ][:4]
+    # Note: requests puts the full URL, API key included, in its exception messages,
+    # so these two branches log the status/type only and never str(exc) or a traceback.
     except requests.HTTPError as exc:
-        if exc.response is not None and exc.response.status_code == 401:
+        status = exc.response.status_code if exc.response is not None else "?"
+        if status == 401:
             app.logger.error("OpenWeather rejected the API key; check OWM_API_KEY")
             return redirect(url_for("error", reason="auth"))
-        app.logger.exception("OpenWeather request failed for %r", city_name)
+        app.logger.error("OpenWeather returned HTTP %s for %r", status, city_name)
         return redirect(url_for("error", reason="unavailable"))
-    except requests.RequestException:
+    except requests.RequestException as exc:
         # Timeouts and connection failures
-        app.logger.exception("OpenWeather request failed for %r", city_name)
+        app.logger.error("OpenWeather request failed for %r: %s", city_name, type(exc).__name__)
         return redirect(url_for("error", reason="unavailable"))
     except (KeyError, IndexError, TypeError):
         # 200 OK but the body isn't shaped the way we expect
@@ -108,9 +143,13 @@ def get_weather(city):
                            today_label=today.strftime("%a"), forecast=forecast)
 
 
-# Display error page for invalid input
 @app.route("/error")
 def error():
+    """Render the error page with a message chosen by the ``reason`` query arg.
+
+    Known reasons are ``unavailable`` and ``auth``; anything else, including no
+    reason at all, gets the "city does not exist" message.
+    """
     messages = {
         "unavailable": "The weather service is unavailable right now. Please try again later.",
         "auth": "The weather service rejected this app's API key. Check the OWM_API_KEY setting.",
