@@ -15,11 +15,5 @@
     "playwright-chromium": "^1.53.1",
     "slidev-addon-qrcode": "^1.0.2",
     "slidev-component-progress": "^1.1.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "dompurify": "^3.4.17",
-      "markdown-it": "^14.3.3"
-    }
   }
 }

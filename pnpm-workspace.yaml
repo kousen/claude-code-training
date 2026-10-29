@@ -9,3 +9,7 @@ allowBuilds:
 # drags in old unocss/unhead/chokidar; align it with the real Slidev version.
 overrides:
   "slidev-component-progress>@slidev/client": "^53.0.0"
+  # monaco-editor pins dompurify 3.4.8, which carries eight advisories; Dependabot cannot move an exact transitive pin
+  dompurify: "^3.4.17"
+  # @modelcontextprotocol/node >= 2.1.2 accepts the patched @hono/node-server 2.1 line
+  "@hono/node-server": "^2.1.3"
