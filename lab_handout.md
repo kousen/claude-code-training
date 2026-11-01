@@ -324,8 +324,10 @@ cp -r skills/modernize-java skills/security-review ~/.claude/skills/
 
 ## Lab 6: Advanced Workflows
 
-**Duration**: ~63 minutes
-**Goal**: Master advanced Claude Code features including Plan Mode, Skills, Plugins, Output Styles, Hooks, MCP, Agent Teams, Surfaces, and Mods
+**Duration**: ~98 minutes for Parts A–H and K–M (Parts I and J are optional)
+**Goal**: Master advanced Claude Code features including Plan Mode, Skills, Plugins, Output Styles, Hooks, MCP, Agent Teams, custom subagents, dynamic workflows, headless runs, Surfaces, and Mods
+
+> **In the live class** these parts run right after the slides they go with, not as one block at the end: Part D after hooks; Parts B, A and K after skills and subagents; Parts H and L after agent teams and workflows; Part E after MCP; Part M after the SDK.
 
 ### Setup
 
@@ -727,6 +729,94 @@ osqueryi --json "SELECT version FROM osquery_info;"
    ```
    - `claude plugin validate` is also how you vet a mod *before* installing one: mods run with your permissions, unsandboxed
 
+#### Part K: Build a Custom Subagent (15 minutes)
+
+> **Note**: A subagent is a markdown file with YAML frontmatter and a system prompt, in `.claude/agents/` (project) or `~/.claude/agents/` (personal). Each one runs in its own context window and hands back only its result, so your main context stays clean. The frontmatter scopes what it can do: `tools`, `model`, `effort`, `permissionMode`, `hooks`, and `isolation`.
+
+29. **Read a working example** (in `exercises/python/weather-app`):
+   ```
+   Read .claude/agents/dependency-compliance-auditor.md. Explain what each frontmatter field does, and how its description decides when you delegate to it.
+   ```
+
+30. **Build a read-only security reviewer** — switch to `exercises/python/flask-api` and create a new branch first:
+   ```
+   Create a project subagent at .claude/agents/security-reviewer.md. It may only use Read, Grep, and Glob, should run on Sonnet at high effort, and reviews Python web code for SQL injection, hardcoded secrets, and missing input validation. It returns findings ranked by severity, each with file and line. Write the description so that you delegate to it whenever I ask for a security review.
+   ```
+   - Open the file and check the `tools`, `model`, and `effort` lines
+   - Run `/agents` to see it listed beside the built-in agents
+
+31. **Delegate to it**:
+   ```
+   Do a security review of app.py and database.py
+   ```
+   - Watch Claude hand the task to `security-reviewer` instead of doing it inline
+   - Notice that only the findings come back into your main context
+   - Ask the reviewer to fix its top finding. It can't: it has no Edit or Write tool, which is the point of scoping tools
+
+32. **Stretch: a fixer that works in isolation**:
+   ```
+   Create a second subagent, security-fixer, with Read, Edit, and Bash, and isolation set to worktree. Have it fix the reviewer's top finding and show me the diff.
+   ```
+   - The fix lands in a separate worktree and branch, not in your working tree
+
+#### Part L: Dynamic Workflows (10 minutes)
+
+> **Note**: A dynamic workflow is a script that runs background agents: fan-out, loops, and verification steps are decided by code, not improvised by a lead agent. They spend tokens fast. The default size is **medium** (about 10 agents; **small** on Pro), set in `/config` → **Dynamic workflow size**. Opt in with `/effort ultracode on`, the keyword `ultracode` in a prompt, or by asking Claude to "use a workflow."
+
+33. **Run a multi-angle review** (still in `exercises/python/flask-api`):
+   ```
+   Use a workflow to review this project from three separate angles: security, error handling, and test coverage. Give each angle its own agent, then have a separate agent verify each finding before you report. Report only the confirmed findings, ranked by severity.
+   ```
+   - If Claude Code asks you to approve the workflow, read its description first
+   - Run `/workflows` to watch the agents start, finish, and hand off to the verify step
+   - Keep working at the main prompt while it runs; you're notified when it finishes
+   - On a Pro plan, ask for two angles instead of three to stay inside the small size
+
+34. **Compare with Part H**:
+   - In the agent team, the lead agent decided how to split the work. Here you described the structure and the script enforced it
+   - Which would you pick for a migration across 200 files? For an exploratory refactor?
+   - Compare the cost of the two runs (`/cost`, or the usage shown when each finishes)
+
+#### Part M: Headless Claude in Scripts and CI (10 minutes)
+
+35. **One prompt, JSON out** (in `exercises/python/flask-api`):
+   ```bash
+   claude -p "List the three riskiest functions in app.py and why" --output-format json | jq -r '.result'
+   ```
+   - `-p` runs one prompt and exits; nothing waits for you to approve
+   - The JSON carries more than the answer. Run it again with `jq '.total_cost_usd, .num_turns'`
+
+36. **A pre-commit check that fails fast**:
+   ```bash
+   cat > "$(git rev-parse --git-path hooks)/pre-commit" <<'HOOK'
+   #!/bin/sh
+   verdict=$(git diff --cached | claude -p "Reply with PASS or FAIL on the first line, then one line of reason. FAIL if this diff adds a hardcoded secret or builds an SQL query by string concatenation." --allowedTools "Read,Grep" --permission-prompts none --max-turns 3)
+   echo "$verdict"
+   echo "$verdict" | head -1 | grep -q '^PASS' || exit 1
+   HOOK
+   chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
+   ```
+   Test it: add `API_KEY = 'sk_live_1234567890abcdef'` to `config.py`, then `git add config.py && git commit -m "test"`. The commit should be refused with the reason.
+   - `--permission-prompts none` auto-denies anything that would prompt, so the hook can never hang waiting for you
+   - Remove the hook when you're done, since it runs on every commit in this repo: `rm "$(git rev-parse --git-path hooks)/pre-commit"`
+
+37. **Optional: the same call from Python**:
+   ```bash
+   pip install claude-agent-sdk
+   ```
+   ```python
+   import anyio
+   from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+
+   async def main():
+       options = ClaudeAgentOptions(allowed_tools=["Read", "Grep"], max_turns=5)
+       async for msg in query(prompt="Summarize what app.py does", options=options):
+           if isinstance(msg, ResultMessage):
+               print(msg.result)
+
+   anyio.run(main)
+   ```
+
 ### Expected Outcomes
 
 After completing this lab, you will:
@@ -745,6 +835,9 @@ After completing this lab, you will:
 - **Understand the 5 Claude Code surfaces and when to use each**
 - **Use `/powerup` for self-directed feature learning**
 - **Ask Claude for a mod, and know what a mod can reach before installing one**
+- **Build a custom subagent with scoped tools, model, and effort, and delegate to it**
+- **Run a dynamic workflow and know when it beats an agent team**
+- **Run Claude headless with JSON output and as a fail-fast pre-commit check**
 
 ### Troubleshooting
 
