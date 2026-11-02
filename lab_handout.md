@@ -18,6 +18,7 @@ This document contains hands-on exercises for learning to use Claude Code for pr
 - An active subscription (Pro / Max / Team / Enterprise) **or** API credits via the Claude Console
 - Git repository access
 - Development environment for multiple languages (Python, JavaScript/TypeScript, Java)
+- **osquery installed before class** (Lab 6 Part B wraps it as a skill mid-afternoon; install steps are in the Lab 6 Setup section)
 
 ### Permission modes (background)
 
@@ -324,16 +325,16 @@ cp -r skills/modernize-java skills/security-review ~/.claude/skills/
 
 ## Lab 6: Advanced Workflows
 
-**Duration**: ~98 minutes for Parts A–H and K–M (Parts I and J are optional)
+**Duration**: ~83 minutes in class for Parts A, B, D, E, H, K, L and M. Parts C, F and G are take-home; Parts I and J are optional
 **Goal**: Master advanced Claude Code features including Plan Mode, Skills, Plugins, Output Styles, Hooks, MCP, Agent Teams, custom subagents, dynamic workflows, headless runs, Surfaces, and Mods
 
-> **In the live class** these parts run right after the slides they go with, not as one block at the end: Part D after hooks; Parts B, A and K after skills and subagents; Parts H and L after agent teams and workflows; Part E after MCP; Part M after the SDK.
+> **In the live class** these parts run right after the slides they go with, not as one block at the end: Part D after hooks; Parts B, A and K after skills and subagents; Parts H and L after agent teams and workflows; Part E after MCP; Part M after the SDK. Parts C (output styles), F (CLAUDE.md vs. skills) and G (feature enhancement) are take-home.
 
 ### Setup
 
 Navigate to the `exercises/python/weather-app` directory for this lab.
 
-**One-time prerequisite for Part B**: install osquery (used for the skill-wrapping exercise). It's free, cross-platform, and ~30 seconds to install:
+**Do this before class, or during the first break**: Part B wraps osquery as a skill, and it runs mid-afternoon with no time set aside for installs. It's free, cross-platform, and ~30 seconds to install:
 
 ```bash
 # macOS
@@ -477,7 +478,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
 **Takeaway exercise** (do after class):
 > Pick a CLI tool whose syntax you don't enjoy memorizing — `kubectl`, `aws`, `gh api`, `jq`, `ffmpeg`, `psql`. Wrap it as a skill following the osquery pattern. If your team would use it, wrap that skill as a plugin.
 
-#### Part C: Output Styles (5 minutes)
+#### Part C: Output Styles (5 minutes, take-home)
 
 > **Note**: As of recent versions, output styles are switched via `/config` → **Output style**, or with `/output-style <name>` (bare `/output-style` lists the available styles). `/output-style <name>` **applies immediately** — no restart (verified on 2.1.278). Editing `outputStyle` in a settings file by hand is picked up on the next session.
 
@@ -589,7 +590,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    - Observe how MCP extends Claude's capabilities
    - Note the `mcp__` prefix on tool names
 
-#### Part F: CLAUDE.md, AGENTS.md, and Skills vs Commands (5 minutes)
+#### Part F: CLAUDE.md, AGENTS.md, and Skills vs Commands (5 minutes, take-home)
 
 16. **CLAUDE.md creation**:
    ```
@@ -612,7 +613,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
 
    This contrast — same automation, two forms — is the heart of the merge.
 
-#### Part G: Feature Enhancement with All Tools (5 minutes)
+#### Part G: Feature Enhancement with All Tools (5 minutes, take-home)
 
 18. **Comprehensive Enhancement**:
 
@@ -761,7 +762,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
 
 #### Part L: Dynamic Workflows (10 minutes)
 
-> **Note**: A dynamic workflow is a script that runs background agents: fan-out, loops, and verification steps are decided by code, not improvised by a lead agent. They spend tokens fast. The default size is **medium** (about 10 agents; **small** on Pro), set in `/config` → **Dynamic workflow size**. Opt in with `/effort ultracode on`, the keyword `ultracode` in a prompt, or by asking Claude to "use a workflow."
+> **Note**: A dynamic workflow is a script that runs background agents: fan-out, loops, and verification steps are decided by code, not improvised by a lead agent. They spend tokens fast. The default size is **medium** (fewer than 10 agents), or **small** (fewer than 5) on a Pro plan with Claude Code 2.1.271 or later. Change it in `/config` → **Dynamic workflow size**; it's advice to Claude, not a hard cap. Opt in with `/effort ultracode on`, the keyword `ultracode` in a prompt, or by asking Claude to "use a workflow."
 
 33. **Run a multi-angle review** (still in `exercises/python/flask-api`):
    ```

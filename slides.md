@@ -146,7 +146,7 @@ On the O'Reilly learning platform — a reference to keep using after today.
 
 </div>
 
-Labs 3 (tests) and 4 (docs) are take-home. Everything is in the repo, and reference slides are in the Appendix.
+Labs 3 (tests) and 4 (docs) and Lab 6 Parts C, F and G are take-home. Install osquery before class for Part B. Everything is in the repo, and reference slides are in the Appendix.
 
 ---
 
