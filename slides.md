@@ -128,6 +128,28 @@ On the O'Reilly learning platform — a reference to keep using after today.
 
 ---
 
+# Today's Agenda
+
+<div class="text-sm">
+
+| Elapsed | Segment | Hands-on |
+|---|---|---|
+| 0:00 | Setup, surfaces, models, operation modes | Lab 0 |
+| 0:35 | Core productivity: exploration, refactoring, git | Labs 1, 2 |
+| 1:20 | *Break* | |
+| 1:30 | Legacy refactoring; CLAUDE.md, commands, hooks, mods | Lab 5, Lab 6 Part D |
+| 2:20 | *Break* | |
+| 2:30 | **Advanced I**: skills & plugins, plan mode, code review, subagents | Lab 6 Parts B, A, K |
+| 3:30 | *Break* | |
+| 3:40 | **Advanced II**: agent teams, workflows, worktrees, MCP, headless & SDK | Lab 6 Parts H, L, E, M |
+| 4:50 | Wrap-up and Q&A | |
+
+</div>
+
+Labs 3 (tests) and 4 (docs) are take-home. Everything is in the repo, and reference slides are in the Appendix.
+
+---
+
 # What is Claude Code?
 
 <v-clicks>
@@ -142,204 +164,37 @@ On the O'Reilly learning platform — a reference to keep using after today.
 </v-clicks>
 
 ---
-layout: image-right
-image: https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80
-backgroundSize: cover
----
 
-# Five Surfaces
+# Surfaces at a Glance
 
 <v-clicks>
 
-- **CLI (Terminal)** — Full-featured, primary interface
-- **VS Code Extension** — Inline diffs, @-mentions, plan review
-- **JetBrains Plugin** — IntelliJ, PyCharm, WebStorm
-- **Desktop App** — Native Mac/Windows with visual diffs, scheduling, connectors
-- **Web (claude.ai/code)** — Browser-based, no local setup required
-
-Local surfaces share: settings, CLAUDE.md, MCP servers, skills, and hooks. Web sessions only inherit repo-committed config — not user-level `~/.claude` settings.
+- **CLI** — full-featured, primary interface (today's focus)
+- **IDE** — VS Code extension and JetBrains plugin: inline diffs, @-mentions, plan review
+- **Desktop app** — Code tab with visual diffs, live preview, parallel sessions in worktrees
+- **Web (claude.ai/code)** — cloud sessions; `claude --cloud "…"` starts one, `/teleport` pulls it back
+- **Integrations** — Slack, Chrome, iOS/Android, GitHub Actions, GitLab CI/CD
+- **Handoffs** — `/desktop`, `/teleport`, `/remote-control` (`claude --rc`); Dispatch sends phone tasks to the Desktop app
 
 </v-clicks>
 
----
-
-# Claude Desktop App
-
-<v-clicks>
-
-- **Three tabs**: Chat (general), Cowork (background agent), Code (interactive coding)
-- **Visual diff review** with inline comments and "Review code" button
-- **Live app preview** with embedded browser and auto-verify
-- **Scheduled tasks** — persistent, local, survives restarts
-- **Connectors** — GitHub, Slack, Linear, Notion, Google Calendar
-- **Computer use** (research preview) — Claude controls screen on macOS/Windows
-- **Parallel sessions** with automatic git worktree isolation
-
-</v-clicks>
+Local surfaces share settings, CLAUDE.md, MCP servers, skills, and hooks. Web sessions only inherit repo-committed config. Each surface has its own slide in the Appendix.
 
 ---
 
-# Claude Code on the Web
+# Plans, Models & Providers
 
 <v-clicks>
 
-- **claude.ai/code** — Run tasks on Anthropic cloud infrastructure
-- **`--cloud` flag**: Start a web session from CLI: `claude --cloud "Fix the auth bug"`
-- **Diff view**: Review changes file-by-file before creating PRs
-- **Auto-fix PRs**: Claude responds to CI failures and review comments automatically
-  - **Caveat**: Replies post under your account — may trigger automation (Atlantis, Actions)
-- **`/teleport`**: Pull web sessions back to your local terminal
-- **Setup**: Connect GitHub, install Claude GitHub App, select environment
-- Also accessible from **Claude iOS and Android apps**
-
-</v-clicks>
-
----
-
-# Integrations & Headless Surfaces
-
-<v-clicks>
-
-- **Slack** — invoke Claude Code in channels and threads
-- **Chrome extension** — page-aware assistance in the browser
-- **iOS app** — read sessions, dispatch work, review diffs from your phone
-- **GitHub Actions** — `anthropics/claude-code-action` for PR reviews, auto-fix, scripted workflows
-- **GitLab CI/CD** — official integration for pipelines
-- **No clean handoff** from Desktop *Code* tab back to terminal as of writing — plan accordingly
-
-</v-clicks>
-
-Surface handoff slash commands you'll meet again later:
-- `/desktop` (alias `/app`) — terminal → desktop *Code* tab *(macOS / Windows)*
-- `/teleport` (alias `/tp`) — web → terminal
-- `/remote-control` (alias `/rc`) — make terminal session controllable from claude.ai
-
----
-
-# Dispatch & Remote Control
-
-<v-clicks>
-
-### Dispatch
-- Send tasks from your **phone** to your **Desktop app**
-- Dispatch routes dev tasks to Code tab, others to Cowork
-- Push notification when done or needs approval
-
-### Remote Control
-- Continue a **running CLI session** from phone or browser
-- `claude --rc` to start with Remote Control enabled
-- `/remote-control` to enable mid-session
-- Session runs locally — web/mobile is just a window into it
-
-</v-clicks>
-
----
-
-# Code Review: `/code-review`
-
-<v-clicks>
-
-- **`/code-review`** reviews the current diff — or a PR: `/code-review <level> <pr#>` (`/review` is an alias)
-- **Effort dial**: pass a level (`low` … `max`); with none, it reuses the level you typed last
-- **`--max-findings <n>|all`**: report more or fewer than the usual limit; the choice sticks until `--max-findings default`
-- At `high`, `xhigh`, and `max` the review runs in a **background agent** — you keep working
-- **`/code-review ultra`**: deep multi-agent review in the cloud (user-triggered, billed)
-- Claude no longer runs `/code-review` or `/verify` on its own — **invoke them deliberately**
-
-</v-clicks>
-
-```bash
-# Review what you're about to commit
-/code-review
-
-# Deep review of a GitHub PR
-/code-review xhigh 1234
-```
-
----
-
-# When NOT to Use Claude Code
-
-<v-clicks>
-
-- **One-line edits you already know how to make** — typing is faster than prompting
-- **Highly regulated codebases** without an enterprise plan + audit trail in place
-- **Tasks needing real-time human judgment** (UX copy decisions, brand voice, legal review)
-- **Production incidents under time pressure** — pair with a human, don't drive solo
-- **Learning a new language/framework** — let the friction teach you first
-- **When you can't review the diff** — if you won't read it, don't ship it
-
-</v-clicks>
-
-The right question isn't "can Claude do this?" — it's "will I understand what shipped?"
-
----
-
-# Subscription Tiers
-
-<v-clicks>
-
-- **Pro** — $20/mo · Opus is the default model (since 2.1.280; was Sonnet)
-- **Max** — from $100/mo · 5x and 20x usage tiers · Sonnet or Opus
-- Usage limits are shared across Claude and Claude Code and reset every 5 hours — exact numbers shift; check the support article below
-- **Team** — shared seats, central billing, admin controls
-- **Enterprise** — SSO, audit, custom retention, Bedrock / Vertex / Foundry routing
-- Opus draws down usage faster than Sonnet — model choice affects how far a session goes
-- API path: pre-paid credits via Console; auto-creates a "Claude Code" workspace for cost tracking
-
-</v-clicks>
-
-📖 **Full details**: [Using Claude Code with your Pro or Max plan](https://support.claude.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan)
-
----
-
-# Picking a Model
-
-<v-clicks>
-
-| Tier | When to reach for it |
+| Model | Reach for it when |
 |---|---|
-| **Opus** (top tier) | Architecture decisions, multi-file refactors, hard debugging, agent orchestration |
-| **Sonnet** (cheaper daily driver) | Most coding, exploration, doc generation |
-| **Haiku** (fastest/cheapest) | Fast loops, batch operations, hooks, classifiers, cheap tool calls |
+| **Opus** (default on every plan) | Architecture, multi-file refactors, hard debugging, orchestration |
+| **Sonnet** | Routine coding and exploration when budget matters |
+| **Haiku** | Fast loops, hooks, classifiers, batch work |
 
-- **Switch mid-conversation**: `Alt+P` / `Option+P`, or `/model` (press `s` for this session only, `d` to set the default for new sessions)
-- **Set per session at launch**: `claude --model opus --effort high`
-- **Effort levels** (`/effort low\|medium\|high\|xhigh\|max`) are orthogonal — control depth on whichever model you picked
-
-</v-clicks>
-
-Run `/model` to see what's current — the lineup advances often (Opus 5.5 — 1M context — is the default Opus as of this writing, with Fable 5.1 above it; open `/effort` to see the level each model starts at).
-
-Rule of thumb: Opus is now the default on every plan, but it draws down usage faster. Drop to Sonnet for routine work when budget matters; keep Opus for the hard problems.
-
----
-
-# Enterprise Providers
-
-<v-clicks>
-
-Three first-class providers for enterprises that need their own infrastructure:
-
-- **AWS Bedrock** — `CLAUDE_CODE_USE_BEDROCK=1`
-- **Google Vertex AI** — `CLAUDE_CODE_USE_VERTEX=1`
-- **Microsoft Foundry** — `CLAUDE_CODE_USE_FOUNDRY=1`
-
-</v-clicks>
-
-<v-clicks>
-
-⚠️ **Gotcha — short model aliases (`opus`, `sonnet`) often resolve to a *previous-generation* model on all three providers, lagging the latest by a version.**
-
-Don't rely on the alias if you need the newest model — pin an explicit version ID and check your provider's model catalog for the exact string:
-```bash
-ANTHROPIC_MODEL=claude-opus-5-5         # explicit version, not the bare "opus" alias
-ANTHROPIC_MODEL=claude-sonnet-5-5       # explicit version, not the bare "sonnet" alias
-```
-
-Auth via the cloud provider's IAM, not an Anthropic API key. LLM gateway pattern: `ANTHROPIC_BASE_URL` + `CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`.
-
-Softer alternative: `ANTHROPIC_DEFAULT_MODEL` sets where new sessions *start*, while a `/model` pick still overrides it and persists — most teams want this, not the hard `ANTHROPIC_MODEL` pin.
+- **Plans**: Pro, Max (5x / 20x), Team, Enterprise, or API credits. Usage resets every 5 hours, and Opus draws it down fastest
+- **Switch**: `/model` or `Alt+P`; launch with `claude --model opus --effort high`
+- **Enterprise routing**: `CLAUDE_CODE_USE_BEDROCK` / `_VERTEX` / `_FOUNDRY`, or a gateway via `ANTHROPIC_BASE_URL`. Pin explicit model IDs, since short aliases can lag a version
 
 </v-clicks>
 
@@ -729,6 +584,22 @@ CLAUDE.md file as though the user invoked the init task.
 
 ---
 
+# Hands-on: Hooks
+
+**Lab 6 Part D · 10 min · exercises/python/weather-app**
+
+<v-clicks>
+
+- A `SessionEnd` hook that writes a session summary
+- A `PreToolUse` security validator that blocks a hardcoded API key
+- Write your own formatting hook
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
+
+---
+
 # Mods: Code That Runs Inside Claude Code
 
 <v-clicks>
@@ -779,176 +650,20 @@ export function register(on) {
 
 ---
 
-# Customizable Keybindings
+# Quality-of-Life Lightning Round
 
 <v-clicks>
 
-- **`/keybindings`** command to configure keyboard shortcuts
-- **Config file**: `~/.claude/keybindings.json`
-- Remap any action to preferred key combinations
-- **`chat:newline`** action for configurable multi-line input
-- **Argument shorthand**: `$0`, `$1` in custom commands (not just `$ARGUMENTS`)
+- **Keybindings** — `/keybindings` edits `~/.claude/keybindings.json`
+- **LSP** — go to definition, find references, call hierarchy through your language server
+- **Output styles** — `/output-style` (Default, Proactive, Concise, Explanatory, Learning), or your own in `.claude/output-styles/`
+- **Resume** — `claude --continue` for the latest session, `claude --resume` for the picker
+- **Images** — drag in, paste with `Ctrl+V` (even on a Mac), or give a path
+- **Notebooks** — reads `.ipynb` files with outputs and edits cells
 
 </v-clicks>
 
-```json
-{
-  "chat:submit": "enter",
-  "chat:newline": "shift+enter",
-  "chat:switch_model": "alt+p",
-  "chat:open_external_editor": "ctrl+x ctrl+e"
-}
-```
-
-Key shortcuts: `Ctrl+B` (background), `Ctrl+X Ctrl+K` (kill agents), `Ctrl+X Ctrl+E` (external editor)
-
----
-
-# LSP: Code Intelligence
-
-<v-clicks>
-
-- **Language Server Protocol** integration for precise code navigation
-- **Go to definition**: Jump to where symbols are defined
-- **Find references**: Locate all usages across the codebase
-- **Hover info**: Get type information and documentation
-- **Call hierarchy**: Trace incoming and outgoing calls
-- **Workspace symbols**: Search for symbols across the project
-- Works with any configured LSP server (TypeScript, Java, Python, etc.)
-
-</v-clicks>
-
----
-
-# Output Styles
-
-<v-clicks>
-
-- **Modify the system prompt** to set role, tone, and format — not what Claude knows
-- **Built-in styles**: **Default**, **Proactive**, **Concise**, **Explanatory**, **Learning**
-- **Custom styles**: Create your own in `~/.claude/output-styles/` (user) or `.claude/output-styles/` (project)
-- **Use cases**:
-  - Onboarding new team members (Explanatory)
-  - Pair-programming and teaching (Learning — drops `TODO(human)` markers for you to fill in)
-  - Custom registers for code review, production work, etc.
-- **For project-specific guidance** (conventions, codebase facts), use `CLAUDE.md` instead
-
-</v-clicks>
-
----
-
-# Using Built-in Output Styles
-
-<v-clicks>
-
-- **Default**: Standard software-engineering system prompt
-- **Proactive**: Executes immediately, minimizes interruptions, prefers action over planning
-- **Concise**: Leads with results, skips preamble and narration — same thoroughness
-- **Explanatory**: Adds educational "Insights" between coding steps
-- **Learning**: Collaborative learn-by-doing — Claude inserts `TODO(human)` markers for you to implement
-- **Switch via `/output-style <name>`** (bare `/output-style` lists them), or `/config` → **Output style**
-- Or edit `outputStyle` directly in `.claude/settings.local.json`:
-
-```json
-{ "outputStyle": "Explanatory" }
-```
-
-- **`/output-style` applies immediately**; a hand-edited settings file is picked up on the next session
-
-</v-clicks>
-
----
-
-# Creating Custom Output Styles
-
-Create `~/.claude/output-styles/production.md`:
-
-```markdown
----
-name: Production
-description: Concise output for experienced developers
----
-
-# Instructions for Claude
-
-- Be concise and action-focused
-- Skip explanations unless asked
-- Show code without lengthy preambles
-- Assume expert-level knowledge
-```
-
-Then run `/output-style production` — it applies immediately.
-
----
-
-# Resuming Conversations
-
-<v-clicks>
-
-- **`--continue`**: Automatically resume most recent conversation
-- **`--resume`**: Interactive picker showing conversation history with timestamps and message counts
-- **Full history restored**: Complete message context maintained (even hundreds of messages)
-- **Original settings preserved**: Model and configuration retained
-- **Stored locally**: Complete conversation database maintained on your machine
-
-</v-clicks>
-
-```bash
-# Continue most recent conversation
-claude --continue
-
-# Show conversation picker with details
-claude --resume
-
-# Continue with new prompt
-claude --continue --print "Continue with my task"
-```
-
----
-layout: image-right
-image: https://images.unsplash.com/photo-1586953208448-b95a79798f07?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80
----
-
-# Working with Images
-
-<v-clicks>
-
-- **Drag and drop** images into Claude Code window
-- **Copy/paste** with `Ctrl+V` (not `Cmd+V` even on a Mac!)
-- **Provide file path**: "Analyze this image: `/path/to/screenshot.png`"
-- Analyze UI designs, error screenshots, diagrams
-- Generate code from visual mockups
-- Debug visual issues and layouts
-
-</v-clicks>
-
-```bash
-# Common image workflows
-"Analyze this error screenshot and suggest fixes"
-"Generate HTML/CSS for this UI mockup"
-"Explain what this diagram shows"
-"Convert this whiteboard sketch to code"
-```
-
----
-
-# Jupyter & Data Science Support
-
-<v-clicks>
-
-- **Read .ipynb files** with full cell outputs
-- **Analyze notebooks**: Code, markdown, and visualizations
-- **Edit notebook cells**: Use NotebookEdit tool
-- **Data analysis workflows**: Process datasets and results
-- **Visualization understanding**: Interpret charts and graphs
-
-</v-clicks>
-
-```bash
-"Analyze this Jupyter notebook and explain the data pipeline"
-"Add error handling to the data processing cells"
-"Convert this notebook to a production Python script"
-```
+Each of these has its own slide in the Appendix.
 
 ---
 layout: image-right
@@ -1124,6 +839,22 @@ When generating Spring Boot code:
 ```
 
 ---
+
+# Hands-on: Skill to Plugin
+
+**Lab 6 Part B · 18 min · exercises/python/weather-app**
+
+<v-clicks>
+
+- Watch a built-in skill (xlsx) activate on its own
+- Wrap a CLI tool (osquery) as a skill with scoped `allowed-tools`
+- Package it as a plugin and test it with `claude --plugin-dir`
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
+
+---
 layout: image-right
 image: https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80
 ---
@@ -1164,6 +895,29 @@ image: https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0
 - **Plan big work in the cloud**: `claude --cloud "…"`, review from any surface, `/teleport` it back
 
 </v-clicks>
+
+---
+
+# Code Review: `/code-review`
+
+<v-clicks>
+
+- **`/code-review`** reviews the current diff — or a PR: `/code-review <level> <pr#>` (`/review` is an alias)
+- **Effort dial**: pass a level (`low` … `max`); with none, it reuses the level you typed last
+- **`--max-findings <n>|all`**: report more or fewer than the usual limit; the choice sticks until `--max-findings default`
+- At `high`, `xhigh`, and `max` the review runs in a **background agent** — you keep working
+- **`/code-review ultra`**: deep multi-agent review in the cloud (user-triggered, billed)
+- Claude no longer runs `/code-review` or `/verify` on its own — **invoke them deliberately**
+
+</v-clicks>
+
+```bash
+# Review what you're about to commit
+/code-review
+
+# Deep review of a GitHub PR
+/code-review xhigh 1234
+```
 
 ---
 
@@ -1211,6 +965,23 @@ Claude launches subagents when tasks match specialized capabilities:
 **You don't manage this** - Claude handles subagent selection automatically for optimal results
 
 </v-clicks>
+
+---
+
+# Hands-on: Plan Mode & Custom Subagents
+
+**Lab 6 Parts A + K · 20 min · weather-app, then flask-api**
+
+<v-clicks>
+
+- Part A: plan an error-handling change in Plan Mode, then approve it
+- Part K: build a read-only `security-reviewer` agent (Read, Grep, Glob; Sonnet; high effort)
+- Delegate a review to it and watch only its summary come back
+- Stretch: a `security-fixer` agent with `isolation: "worktree"`
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
 
 ---
 
@@ -1309,9 +1080,54 @@ Built for work one context can't hold: exhaustive multi-dimension code review, a
 - **`Ctrl+X Ctrl+K`** to kill all background agents
 - **`/batch` skill**: parallel changes across many files (uses worktrees under the hood)
 - **Subagents** can declare `isolation: "worktree"` in frontmatter for safe parallel writes
-- See the *Git Worktrees* slide later for the worktree mechanics
+- See the *Git Worktrees* slide next for the worktree mechanics
 
 </v-clicks>
+
+---
+
+# Git Worktrees for Parallel Sessions
+
+<v-clicks>
+
+- **Built-in worktree support**: `claude -w` or `claude --worktree`
+  - Automatically creates isolated worktree + new branch
+  - Prompts to keep or remove on session exit
+- **Manual worktrees** also work for full control
+- Share git history while isolating working files
+- Perfect for multi-feature development
+
+</v-clicks>
+
+```bash
+# Built-in (preferred) — automatic isolation
+claude -w                     # Start in new worktree
+claude --worktree             # Same thing
+
+# Manual worktrees for full control
+git worktree add ../project-feature-a -b feature-a
+cd ../project-feature-a && claude
+
+# Manage worktrees
+git worktree list
+git worktree remove ../project-feature-a
+```
+
+---
+
+# Hands-on: Agent Teams vs. Workflows
+
+**Lab 6 Parts H + L · 20 min · certificate-service, then flask-api**
+
+<v-clicks>
+
+- Part H: a three-agent team on certificate-service (tests, security, docs)
+- Part L: a multi-angle review as a dynamic workflow with a verify step; watch it in `/workflows`
+- Compare: who decided the split, and what did each one cost?
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
 
 ---
 
@@ -1491,11 +1307,27 @@ claude mcp add docker-mcp docker mcp gateway run
 
 ---
 
-# Claude Code SDKs
+# Hands-on: MCP
+
+**Lab 6 Part E · 5 min · exercises/python/weather-app**
 
 <v-clicks>
 
-- **Available SDKs**: TypeScript, Python, Command Line
+- `claude mcp list`, then add Context7 over HTTP
+- Ask for current Flask error-handling docs through it
+- Spot the `mcp__` prefix on the tool names
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
+
+---
+
+# Claude Agent SDK
+
+<v-clicks>
+
+- **Available SDKs**: TypeScript (`@anthropic-ai/claude-agent-sdk`), Python (`claude-agent-sdk`), plus `claude -p` on the command line
 - **Build AI-powered coding assistants** into your workflows
 - **Multi-turn conversations** and session management
 - **Custom system prompts** and flexible I/O formats
@@ -1510,8 +1342,8 @@ claude -p "Generate a hello world function" --output-format json
 ```
 
 ```typescript
-// TypeScript SDK
-import { query } from "@anthropic-ai/claude-code";
+// TypeScript: npm install @anthropic-ai/claude-agent-sdk
+import { query } from "@anthropic-ai/claude-agent-sdk";
 
 for await (const message of query({
   prompt: "Write a haiku about foo.py",
@@ -1527,13 +1359,13 @@ for await (const message of query({
 
 <v-clicks>
 
-### Python — async iteration with context files
+### Python — async iteration with options
 ```python
-from claude_code import query
+from claude_agent_sdk import query, ClaudeAgentOptions
 
-async for msg in query("Refactor this module",
-                       context_files=["app.py"], max_turns=3):
-    print(msg.content)
+opts = ClaudeAgentOptions(max_turns=3, allowed_tools=["Read", "Edit"])
+async for msg in query(prompt="Refactor app.py", options=opts):
+    print(msg)
 ```
 
 ### CI/CD — JSON output for parsing
@@ -1545,12 +1377,28 @@ async for msg in query("Refactor this module",
 ### Git hooks — restricted tools, fail fast
 ```bash
 # .git/hooks/pre-commit
-claude -p "Check for security issues" --allowed-tools read,grep
+claude -p "Check for security issues" --allowedTools "Read,Grep" --permission-prompts none
 ```
 
 </v-clicks>
 
 Same SDK, three deployment shapes: interactive script, CI step, git hook.
+
+---
+
+# Hands-on: Headless & SDK
+
+**Lab 6 Part M · 10 min · exercises/python/flask-api**
+
+<v-clicks>
+
+- `claude -p … --output-format json | jq` — result, cost, and turn count
+- A pre-commit check that blocks a hardcoded secret
+- Optional: the same call from Python with `claude-agent-sdk`
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
 
 ---
 
@@ -1586,21 +1434,496 @@ Same SDK, three deployment shapes: interactive script, CI step, git hook.
 </v-clicks>
 
 ---
-layout: image-left
-image: https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80
+
+# Effective Prompting & Best Practices
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+### Effective Prompting
+<v-clicks>
+
+- **Be specific** about what you want to achieve
+- **Provide context** about your goals and constraints
+- **Use iterative refinement** for complex tasks
+- **Include examples** when possible to show desired patterns
+
+</v-clicks>
+
+</div>
+<div>
+
+### Best Practices
+<v-clicks>
+
+- **Create a git branch first** for any significant changes
+- **Commit checkpoints regularly** during development
+- **Review all AI-generated code** before accepting
+- **Test generated code** thoroughly
+
+</v-clicks>
+
+</div>
+</div>
+
+---
+
+# What's New (Claude Code 2.1.296, Oct 2026)
+
+<v-clicks>
+
+- **Auto mode is the default** — fresh sessions start in Auto on every plan; `Shift+Tab` or `permissions.defaultMode` for Manual
+- **Models**: Opus 5.5, Sonnet 5.5, Haiku 5.5 — all 1M context; Opus is now the default on Pro and Team too
+- **`/effort ultracode`** — dynamic workflows are a session toggle, no longer tied to xhigh effort
+- **`/doctor prompt-audit`** — flags CLAUDE.md, skills, agents, and commands written for older models
+- **Hooks**: `onFailure: "block"` makes a crashed or timed-out hook fail closed instead of open
+- **Mods**: plugins whose JS/TS hooks run *inside* Claude Code — panes, `/commands`, tool-call guards (see the Mods slide)
+- **`/code-review --max-findings <n>|all`**; the Agent tool takes a per-call `effort`
+- **`claude --desktop`** — open the desktop app on this directory, or on a `--resume`d session
+- **Still worth knowing**: `/skill-doctor`, `/diff`, background sessions (`claude --bg`; `attach`/`logs` accept part of a name)
+
+</v-clicks>
+
+---
+
+# Quick Access
+
+<div class="grid grid-cols-2 gap-8 mt-8 place-items-center">
+  <div class="flex flex-col items-center">
+    <h3>Claude Code Docs</h3>
+    <QRCode
+      :width="200"
+      :height="200"
+      type="svg"
+      data="https://code.claude.com/docs/en/overview"
+      :margin="5"
+      :dotsOptions="{ type: 'rounded', color: '#3b82f6' }"
+    />
+    <p class="text-sm mt-2">code.claude.com/docs</p>
+  </div>
+  <div class="flex flex-col items-center">
+    <h3>Course Repository</h3>
+    <QRCode
+      :width="200"
+      :height="200"
+      type="svg"
+      data="https://github.com/kousen/claude-code-training"
+      :margin="5"
+      :dotsOptions="{ type: 'rounded', color: '#10b981' }"
+    />
+    <p class="text-sm mt-2">github.com/kousen/claude-code-training</p>
+  </div>
+</div>
+
+---
+
+# Important Links
+
+<div class="mt-2 text-base [&_h3]:mt-3 [&_h3]:mb-0 [&_h3]:text-xl [&_p]:my-1">
+
+<v-clicks>
+
+### 📚 Claude Code Documentation
+`https://code.claude.com/docs/en/overview`
+
+### 🐙 Official GitHub Repository  
+`https://github.com/anthropics/claude-code`
+
+### 📖 *Claude Code: Up and Running* (O'Reilly)
+`https://learning.oreilly.com/library/view/claude-code-up/0642572388782/`
+
+### 💻 Course Source Code & Exercises
+`https://github.com/kousen/claude-code-training`
+
+### 🆘 Support & Issues
+`https://github.com/anthropics/claude-code/issues`
+
+</v-clicks>
+
+</div>
+
+---
+
+# Thank You!
+
+<div class="text-center">
+
+## Questions?
+
+<div class="pt-12">
+  <span class="text-6xl"><carbon:logo-github /></span>
+</div>
+
+**Kenneth Kousen**  
+*Author, Speaker, Java & AI Expert*
+
+[kousenit.com](https://kousenit.com) | [@kenkousen](https://twitter.com/kenkousen)
+
+</div>
+
+---
+layout: center
+class: text-center
+---
+
+# Appendix
+
+<div class="mt-12">
+  <h2 class="text-3xl font-bold">Reference Slides</h2>
+  <p class="text-lg mt-4">Surfaces in detail, plans and providers, quality-of-life features, cost, context, permissions, troubleshooting, and command reference</p>
+</div>
+
+---
+layout: image-right
+image: https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80
 backgroundSize: cover
 ---
 
-# Management & Control
+# Five Surfaces
 
-<div class="mt-20">
-  <h2 class="text-4xl font-bold text-white bg-black bg-opacity-70 px-6 py-3 rounded-lg">
-    Monitor and Control
-  </h2>
-  <p class="text-xl text-white bg-black bg-opacity-70 px-4 py-2 rounded mt-4">
-    Cost, context, and permission management
-  </p>
-</div>
+<v-clicks>
+
+- **CLI (Terminal)** — Full-featured, primary interface
+- **VS Code Extension** — Inline diffs, @-mentions, plan review
+- **JetBrains Plugin** — IntelliJ, PyCharm, WebStorm
+- **Desktop App** — Native Mac/Windows with visual diffs, scheduling, connectors
+- **Web (claude.ai/code)** — Browser-based, no local setup required
+
+Local surfaces share: settings, CLAUDE.md, MCP servers, skills, and hooks. Web sessions only inherit repo-committed config — not user-level `~/.claude` settings.
+
+</v-clicks>
+
+---
+
+# Claude Desktop App
+
+<v-clicks>
+
+- **Three tabs**: Chat (general), Cowork (background agent), Code (interactive coding)
+- **Visual diff review** with inline comments and "Review code" button
+- **Live app preview** with embedded browser and auto-verify
+- **Scheduled tasks** — persistent, local, survives restarts
+- **Connectors** — GitHub, Slack, Linear, Notion, Google Calendar
+- **Computer use** (research preview) — Claude controls screen on macOS/Windows
+- **Parallel sessions** with automatic git worktree isolation
+
+</v-clicks>
+
+---
+
+# Claude Code on the Web
+
+<v-clicks>
+
+- **claude.ai/code** — Run tasks on Anthropic cloud infrastructure
+- **`--cloud` flag**: Start a web session from CLI: `claude --cloud "Fix the auth bug"`
+- **Diff view**: Review changes file-by-file before creating PRs
+- **Auto-fix PRs**: Claude responds to CI failures and review comments automatically
+  - **Caveat**: Replies post under your account — may trigger automation (Atlantis, Actions)
+- **`/teleport`**: Pull web sessions back to your local terminal
+- **Setup**: Connect GitHub, install Claude GitHub App, select environment
+- Also accessible from **Claude iOS and Android apps**
+
+</v-clicks>
+
+---
+
+# Integrations & Headless Surfaces
+
+<v-clicks>
+
+- **Slack** — invoke Claude Code in channels and threads
+- **Chrome extension** — page-aware assistance in the browser
+- **iOS app** — read sessions, dispatch work, review diffs from your phone
+- **GitHub Actions** — `anthropics/claude-code-action` for PR reviews, auto-fix, scripted workflows
+- **GitLab CI/CD** — official integration for pipelines
+- **No clean handoff** from Desktop *Code* tab back to terminal as of writing — plan accordingly
+
+</v-clicks>
+
+Surface handoff slash commands you'll meet again later:
+- `/desktop` (alias `/app`) — terminal → desktop *Code* tab *(macOS / Windows)*
+- `/teleport` (alias `/tp`) — web → terminal
+- `/remote-control` (alias `/rc`) — make terminal session controllable from claude.ai
+
+---
+
+# Dispatch & Remote Control
+
+<v-clicks>
+
+### Dispatch
+- Send tasks from your **phone** to your **Desktop app**
+- Dispatch routes dev tasks to Code tab, others to Cowork
+- Push notification when done or needs approval
+
+### Remote Control
+- Continue a **running CLI session** from phone or browser
+- `claude --rc` to start with Remote Control enabled
+- `/remote-control` to enable mid-session
+- Session runs locally — web/mobile is just a window into it
+
+</v-clicks>
+
+---
+
+# When NOT to Use Claude Code
+
+<v-clicks>
+
+- **One-line edits you already know how to make** — typing is faster than prompting
+- **Highly regulated codebases** without an enterprise plan + audit trail in place
+- **Tasks needing real-time human judgment** (UX copy decisions, brand voice, legal review)
+- **Production incidents under time pressure** — pair with a human, don't drive solo
+- **Learning a new language/framework** — let the friction teach you first
+- **When you can't review the diff** — if you won't read it, don't ship it
+
+</v-clicks>
+
+The right question isn't "can Claude do this?" — it's "will I understand what shipped?"
+
+---
+
+# Subscription Tiers
+
+<v-clicks>
+
+- **Pro** — $20/mo · Opus is the default model (since 2.1.280; was Sonnet)
+- **Max** — from $100/mo · 5x and 20x usage tiers · Sonnet or Opus
+- Usage limits are shared across Claude and Claude Code and reset every 5 hours — exact numbers shift; check the support article below
+- **Team** — shared seats, central billing, admin controls
+- **Enterprise** — SSO, audit, custom retention, Bedrock / Vertex / Foundry routing
+- Opus draws down usage faster than Sonnet — model choice affects how far a session goes
+- API path: pre-paid credits via Console; auto-creates a "Claude Code" workspace for cost tracking
+
+</v-clicks>
+
+📖 **Full details**: [Using Claude Code with your Pro or Max plan](https://support.claude.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan)
+
+---
+
+# Picking a Model
+
+<v-clicks>
+
+| Tier | When to reach for it |
+|---|---|
+| **Opus** (top tier) | Architecture decisions, multi-file refactors, hard debugging, agent orchestration |
+| **Sonnet** (cheaper daily driver) | Most coding, exploration, doc generation |
+| **Haiku** (fastest/cheapest) | Fast loops, batch operations, hooks, classifiers, cheap tool calls |
+
+- **Switch mid-conversation**: `Alt+P` / `Option+P`, or `/model` (press `s` for this session only, `d` to set the default for new sessions)
+- **Set per session at launch**: `claude --model opus --effort high`
+- **Effort levels** (`/effort low\|medium\|high\|xhigh\|max`) are orthogonal — control depth on whichever model you picked
+
+</v-clicks>
+
+Run `/model` to see what's current — the lineup advances often (Opus 5.5 — 1M context — is the default Opus as of this writing, with Fable 5.1 above it; open `/effort` to see the level each model starts at).
+
+Rule of thumb: Opus is now the default on every plan, but it draws down usage faster. Drop to Sonnet for routine work when budget matters; keep Opus for the hard problems.
+
+---
+
+# Enterprise Providers
+
+<v-clicks>
+
+Three first-class providers for enterprises that need their own infrastructure:
+
+- **AWS Bedrock** — `CLAUDE_CODE_USE_BEDROCK=1`
+- **Google Vertex AI** — `CLAUDE_CODE_USE_VERTEX=1`
+- **Microsoft Foundry** — `CLAUDE_CODE_USE_FOUNDRY=1`
+
+</v-clicks>
+
+<v-clicks>
+
+⚠️ **Gotcha — short model aliases (`opus`, `sonnet`) often resolve to a *previous-generation* model on all three providers, lagging the latest by a version.**
+
+Don't rely on the alias if you need the newest model — pin an explicit version ID and check your provider's model catalog for the exact string:
+```bash
+ANTHROPIC_MODEL=claude-opus-5-5         # explicit version, not the bare "opus" alias
+ANTHROPIC_MODEL=claude-sonnet-5-5       # explicit version, not the bare "sonnet" alias
+```
+
+Auth via the cloud provider's IAM, not an Anthropic API key. LLM gateway pattern: `ANTHROPIC_BASE_URL` + `CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`.
+
+Softer alternative: `ANTHROPIC_DEFAULT_MODEL` sets where new sessions *start*, while a `/model` pick still overrides it and persists — most teams want this, not the hard `ANTHROPIC_MODEL` pin.
+
+</v-clicks>
+
+---
+
+# Customizable Keybindings
+
+<v-clicks>
+
+- **`/keybindings`** command to configure keyboard shortcuts
+- **Config file**: `~/.claude/keybindings.json`
+- Remap any action to preferred key combinations
+- **`chat:newline`** action for configurable multi-line input
+- **Argument shorthand**: `$0`, `$1` in custom commands (not just `$ARGUMENTS`)
+
+</v-clicks>
+
+```json
+{
+  "chat:submit": "enter",
+  "chat:newline": "shift+enter",
+  "chat:switch_model": "alt+p",
+  "chat:open_external_editor": "ctrl+x ctrl+e"
+}
+```
+
+Key shortcuts: `Ctrl+B` (background), `Ctrl+X Ctrl+K` (kill agents), `Ctrl+X Ctrl+E` (external editor)
+
+---
+
+# LSP: Code Intelligence
+
+<v-clicks>
+
+- **Language Server Protocol** integration for precise code navigation
+- **Go to definition**: Jump to where symbols are defined
+- **Find references**: Locate all usages across the codebase
+- **Hover info**: Get type information and documentation
+- **Call hierarchy**: Trace incoming and outgoing calls
+- **Workspace symbols**: Search for symbols across the project
+- Works with any configured LSP server (TypeScript, Java, Python, etc.)
+
+</v-clicks>
+
+---
+
+# Output Styles
+
+<v-clicks>
+
+- **Modify the system prompt** to set role, tone, and format — not what Claude knows
+- **Built-in styles**: **Default**, **Proactive**, **Concise**, **Explanatory**, **Learning**
+- **Custom styles**: Create your own in `~/.claude/output-styles/` (user) or `.claude/output-styles/` (project)
+- **Use cases**:
+  - Onboarding new team members (Explanatory)
+  - Pair-programming and teaching (Learning — drops `TODO(human)` markers for you to fill in)
+  - Custom registers for code review, production work, etc.
+- **For project-specific guidance** (conventions, codebase facts), use `CLAUDE.md` instead
+
+</v-clicks>
+
+---
+
+# Using Built-in Output Styles
+
+<v-clicks>
+
+- **Default**: Standard software-engineering system prompt
+- **Proactive**: Executes immediately, minimizes interruptions, prefers action over planning
+- **Concise**: Leads with results, skips preamble and narration — same thoroughness
+- **Explanatory**: Adds educational "Insights" between coding steps
+- **Learning**: Collaborative learn-by-doing — Claude inserts `TODO(human)` markers for you to implement
+- **Switch via `/output-style <name>`** (bare `/output-style` lists them), or `/config` → **Output style**
+- Or edit `outputStyle` directly in `.claude/settings.local.json`:
+
+```json
+{ "outputStyle": "Explanatory" }
+```
+
+- **`/output-style` applies immediately**; a hand-edited settings file is picked up on the next session
+
+</v-clicks>
+
+---
+
+# Creating Custom Output Styles
+
+Create `~/.claude/output-styles/production.md`:
+
+```markdown
+---
+name: Production
+description: Concise output for experienced developers
+---
+
+# Instructions for Claude
+
+- Be concise and action-focused
+- Skip explanations unless asked
+- Show code without lengthy preambles
+- Assume expert-level knowledge
+```
+
+Then run `/output-style production` — it applies immediately.
+
+---
+
+# Resuming Conversations
+
+<v-clicks>
+
+- **`--continue`**: Automatically resume most recent conversation
+- **`--resume`**: Interactive picker showing conversation history with timestamps and message counts
+- **Full history restored**: Complete message context maintained (even hundreds of messages)
+- **Original settings preserved**: Model and configuration retained
+- **Stored locally**: Complete conversation database maintained on your machine
+
+</v-clicks>
+
+```bash
+# Continue most recent conversation
+claude --continue
+
+# Show conversation picker with details
+claude --resume
+
+# Continue with new prompt
+claude --continue --print "Continue with my task"
+```
+
+---
+layout: image-right
+image: https://images.unsplash.com/photo-1586953208448-b95a79798f07?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80
+---
+
+# Working with Images
+
+<v-clicks>
+
+- **Drag and drop** images into Claude Code window
+- **Copy/paste** with `Ctrl+V` (not `Cmd+V` even on a Mac!)
+- **Provide file path**: "Analyze this image: `/path/to/screenshot.png`"
+- Analyze UI designs, error screenshots, diagrams
+- Generate code from visual mockups
+- Debug visual issues and layouts
+
+</v-clicks>
+
+```bash
+# Common image workflows
+"Analyze this error screenshot and suggest fixes"
+"Generate HTML/CSS for this UI mockup"
+"Explain what this diagram shows"
+"Convert this whiteboard sketch to code"
+```
+
+---
+
+# Jupyter & Data Science Support
+
+<v-clicks>
+
+- **Read .ipynb files** with full cell outputs
+- **Analyze notebooks**: Code, markdown, and visualizations
+- **Edit notebook cells**: Use NotebookEdit tool
+- **Data analysis workflows**: Process datasets and results
+- **Visualization understanding**: Interpret charts and graphs
+
+</v-clicks>
+
+```bash
+"Analyze this Jupyter notebook and explain the data pipeline"
+"Add error handling to the data processing cells"
+"Convert this notebook to a production Python script"
+```
 
 ---
 
@@ -1703,85 +2026,6 @@ alias claude-ci='claude --allowed-tools bash,git,test'
 ```
 
 ---
-layout: image-left
-image: https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80
-backgroundSize: cover
----
-
-# Team & Best Practices
-
-<div class="text-center mt-20">
-  <h2 class="text-4xl font-bold text-white bg-black bg-opacity-60 px-6 py-3 rounded-lg">
-    Collaborate Effectively
-  </h2>
-  <p class="text-xl text-white bg-black bg-opacity-60 px-4 py-2 rounded mt-4">
-    Team workflows and professional practices
-  </p>
-</div>
-
----
-
-# Git Worktrees for Parallel Sessions
-
-<v-clicks>
-
-- **Built-in worktree support**: `claude -w` or `claude --worktree`
-  - Automatically creates isolated worktree + new branch
-  - Prompts to keep or remove on session exit
-- **Manual worktrees** also work for full control
-- Share git history while isolating working files
-- Perfect for multi-feature development
-
-</v-clicks>
-
-```bash
-# Built-in (preferred) — automatic isolation
-claude -w                     # Start in new worktree
-claude --worktree             # Same thing
-
-# Manual worktrees for full control
-git worktree add ../project-feature-a -b feature-a
-cd ../project-feature-a && claude
-
-# Manage worktrees
-git worktree list
-git worktree remove ../project-feature-a
-```
-
----
-
-# Effective Prompting & Best Practices
-
-<div class="grid grid-cols-2 gap-8">
-<div>
-
-### Effective Prompting
-<v-clicks>
-
-- **Be specific** about what you want to achieve
-- **Provide context** about your goals and constraints
-- **Use iterative refinement** for complex tasks
-- **Include examples** when possible to show desired patterns
-
-</v-clicks>
-
-</div>
-<div>
-
-### Best Practices
-<v-clicks>
-
-- **Create a git branch first** for any significant changes
-- **Commit checkpoints regularly** during development
-- **Review all AI-generated code** before accepting
-- **Test generated code** thoroughly
-
-</v-clicks>
-
-</div>
-</div>
-
----
 
 # Troubleshooting & Configuration
 
@@ -1865,24 +2109,6 @@ curl -fsSL https://claude.ai/install.sh | bash
 
 ---
 
-# What's New (Claude Code 2.1.296, Oct 2026)
-
-<v-clicks>
-
-- **Auto mode is the default** — fresh sessions start in Auto on every plan; `Shift+Tab` or `permissions.defaultMode` for Manual
-- **Models**: Opus 5.5, Sonnet 5.5, Haiku 5.5 — all 1M context; Opus is now the default on Pro and Team too
-- **`/effort ultracode`** — dynamic workflows are a session toggle, no longer tied to xhigh effort
-- **`/doctor prompt-audit`** — flags CLAUDE.md, skills, agents, and commands written for older models
-- **Hooks**: `onFailure: "block"` makes a crashed or timed-out hook fail closed instead of open
-- **Mods**: plugins whose JS/TS hooks run *inside* Claude Code — panes, `/commands`, tool-call guards (see the Mods slide)
-- **`/code-review --max-findings <n>|all`**; the Agent tool takes a per-call `effort`
-- **`claude --desktop`** — open the desktop app on this directory, or on a `--resume`d session
-- **Still worth knowing**: `/skill-doctor`, `/diff`, background sessions (`claude --bg`; `attach`/`logs` accept part of a name)
-
-</v-clicks>
-
----
-
 # Command Reference: Workflow
 
 <v-clicks>
@@ -1918,80 +2144,3 @@ curl -fsSL https://claude.ai/install.sh | bash
 **Removed**: `/tag`, `/vim` (use `/config`).
 
 </v-clicks>
-
----
-
-# Quick Access
-
-<div class="grid grid-cols-2 gap-8 mt-8 place-items-center">
-  <div class="flex flex-col items-center">
-    <h3>Claude Code Docs</h3>
-    <QRCode
-      :width="200"
-      :height="200"
-      type="svg"
-      data="https://code.claude.com/docs/en/overview"
-      :margin="5"
-      :dotsOptions="{ type: 'rounded', color: '#3b82f6' }"
-    />
-    <p class="text-sm mt-2">code.claude.com/docs</p>
-  </div>
-  <div class="flex flex-col items-center">
-    <h3>Course Repository</h3>
-    <QRCode
-      :width="200"
-      :height="200"
-      type="svg"
-      data="https://github.com/kousen/claude-code-training"
-      :margin="5"
-      :dotsOptions="{ type: 'rounded', color: '#10b981' }"
-    />
-    <p class="text-sm mt-2">github.com/kousen/claude-code-training</p>
-  </div>
-</div>
-
----
-
-# Important Links
-
-<div class="mt-2 text-base [&_h3]:mt-3 [&_h3]:mb-0 [&_h3]:text-xl [&_p]:my-1">
-
-<v-clicks>
-
-### 📚 Claude Code Documentation
-`https://code.claude.com/docs/en/overview`
-
-### 🐙 Official GitHub Repository  
-`https://github.com/anthropics/claude-code`
-
-### 📖 *Claude Code: Up and Running* (O'Reilly)
-`https://learning.oreilly.com/library/view/claude-code-up/0642572388782/`
-
-### 💻 Course Source Code & Exercises
-`https://github.com/kousen/claude-code-training`
-
-### 🆘 Support & Issues
-`https://github.com/anthropics/claude-code/issues`
-
-</v-clicks>
-
-</div>
-
----
-
-# Thank You!
-
-<div class="text-center">
-
-## Questions?
-
-<div class="pt-12">
-  <span class="text-6xl"><carbon:logo-github /></span>
-</div>
-
-**Kenneth Kousen**  
-*Author, Speaker, Java & AI Expert*
-
-[kousenit.com](https://kousenit.com) | [@kenkousen](https://twitter.com/kenkousen)
-
-</div>
