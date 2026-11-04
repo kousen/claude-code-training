@@ -43,6 +43,8 @@ css: unocss
 
 # Claude Code Training
 
+<p class="text-xl opacity-80">Yale ITS · Tuesday, November 10, 2026</p>
+
 <div class="pt-12">
   <span @click="$slidev.nav.next" class="px-2 py-1 rounded cursor-pointer" hover="bg-white bg-opacity-10">
     Press Space for next page <carbon:arrow-right class="inline"/>
@@ -105,7 +107,7 @@ On the O'Reilly learning platform — a reference to keep using after today.
 
 <v-clicks>
 
-- **Duration**: 5 hours of hands-on learning
+- **Duration**: 4 hours, about 40% of it hands-on
 - **Format**: Instructor-led with multiple labs
 - **Hands-on Labs**: Real codebases in Python, JavaScript, Java
 - **Prerequisites**: Command-line experience, development background
@@ -122,7 +124,8 @@ On the O'Reilly learning platform — a reference to keep using after today.
 - **Core Skills**: Testing, documentation, git operations
 - **Customization**: CLAUDE.md, skills, hooks, output styles
 - **Extensibility**: Plugins, MCP integration
-- **Advanced**: Effort Levels, Plan Mode, Code Review, Subagents, Agent Teams, Dynamic Workflows, SDKs
+- **Trust & scale**: Effort Levels, Plan Mode, Code Review, permissions, Subagents
+- **In the Appendix** (take-home): Plugins, Mods, Agent Teams, Dynamic Workflows, worktrees, SDKs
 
 </v-clicks>
 
@@ -132,21 +135,21 @@ On the O'Reilly learning platform — a reference to keep using after today.
 
 <div class="text-sm">
 
-| Elapsed | Segment | Hands-on |
+| Clock | Module | Hands-on |
 |---|---|---|
-| 0:00 | Setup, surfaces, models, operation modes | Lab 0 |
-| 0:35 | Core productivity: exploration, refactoring, git | Labs 1, 2 |
-| 1:20 | *Break* | |
-| 1:30 | Legacy refactoring; CLAUDE.md, commands, hooks, mods | Lab 5, Lab 6 Part D |
-| 2:20 | *Break* | |
-| 2:30 | **Advanced I**: skills & plugins, plan mode, code review, subagents | Lab 6 Parts B, A, K |
-| 3:30 | *Break* | |
-| 3:40 | **Advanced II**: agent teams, workflows, worktrees, MCP, headless & SDK | Lab 6 Parts H, L, E, M |
-| 4:50 | Wrap-up and Q&A | |
+| 12:00 | **1 · Foundations**: surfaces, models, operation modes, the effort dial | Lab 0 |
+| 12:35 | **2 · Exploration**: `@` references, the clarification pass, Plan Mode | Labs 1, 2 · Lab 6 Part A |
+| 1:10 | *Break* | |
+| 1:20 | **3 · Development acceleration**: tests first, refactoring, git | Lab 5 |
+| 2:05 | **4 · Skills, hooks, project memory, MCP** | Lab 6 Parts F, D, B, E |
+| 2:50 | *Break* | |
+| 3:00 | **5 · Trust & teams**: permissions, review by risk, when to scale | Lab 6 Part K |
+| 3:40 | Discussion and Q&A | |
+| 4:00 | End | |
 
 </div>
 
-Labs 3 (tests) and 4 (docs) and Lab 6 Parts C, F and G are take-home. Install osquery before class for Part B. Everything is in the repo, and reference slides are in the Appendix.
+Take-home: Labs 3 and 4, Lab 6 Parts C, G, H, L and M, and the plugin half of Part B; their slides are in the Appendix. We're on the `yale_nov2026` branch of the repo, not `main`.
 
 ---
 
@@ -255,6 +258,33 @@ with Next, Previous, and Play buttons"
 
 ---
 layout: image-right
+image: https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80
+---
+
+# Effort Levels
+
+<v-clicks>
+
+- **`/effort low|medium|high|xhigh|max`** controls reasoning depth (picker labels: Faster ↔ Smarter)
+- **Low**: Fast responses for simple tasks
+- **Medium**: Balanced reasoning
+- **High**: Deep analysis for complex architecture
+- **xhigh**: Very deep reasoning for hard tasks
+- **max**: The ceiling — reserve for the hardest problems
+- **`ultrathink`** in a prompt runs that turn at **xhigh** (2.1.311, current models on the Anthropic API); `CLAUDE_CODE_DISABLE_ULTRATHINK=1` turns it off
+- Can set in skill frontmatter: `effort: high`
+
+</v-clicks>
+
+```bash
+/effort high
+
+# Or raise one turn to xhigh with the keyword
+"Ultrathink about the best approach for implementing OAuth2"
+```
+
+---
+layout: image-right
 image: https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80
 backgroundSize: cover
 ---
@@ -289,6 +319,37 @@ backgroundSize: cover
 "Explain @src/main/java/com/example/UserController.java"
 "How does @pom.xml configure Spring Boot?"
 ```
+
+---
+
+# Plan Mode
+
+<v-clicks>
+
+- Type **`/plan`** or cycle with `Shift+Tab` to activate
+- Claude presents implementation plan before writing code
+- Review strategy, approve, or modify approach
+- Perfect for complex, multi-file changes
+- **Uses the Plan subagent** behind the scenes
+- **Plan big work in the cloud**: `claude --cloud "…"`, review from any surface, `/teleport` it back
+
+</v-clicks>
+
+---
+
+# Hands-on: Exploration & Plan Mode
+
+**Labs 1, 2 + Lab 6 Part A · 20 min · exercises/python/weather-app**
+
+<v-clicks>
+
+- Lab 1: first prompts, `@` file references, the same question at `/effort low` and `/effort high`
+- Lab 2: map the architecture and trace one request end to end
+- Part A: plan an error-handling change in Plan Mode, then approve it
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
 
 ---
 
@@ -399,6 +460,22 @@ backgroundSize: cover
 
 ---
 
+# Hands-on: Legacy Refactoring
+
+**Lab 5 · 15 min · exercises/python/flask-api (or java/shopping-service)**
+
+<v-clicks>
+
+- Branch first, then have Claude write a baseline test suite as the safety net
+- Modernize: error handling, the obvious security holes, `/security-review`
+- Commit with a Claude-written message and read the diff before you trust it
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
+
+---
+
 # CLAUDE.md Files
 
 <v-clicks>
@@ -439,31 +516,20 @@ See @AGENTS.md for conventions shared with Codex and other agentic tools.
 
 ---
 
-# Custom Statusline
+# Auto-Memory
 
 <v-clicks>
 
-- **Configure context display**: `~/.claude/settings.json` or `/statusline`
-- Shows git branch, status, working directory, custom info
-- Keeps important context visible without asking
-- Reduces repetitive status checks
+- Claude **automatically records and recalls** memories as it works
+- Stored at `~/.claude/projects/<project>/memory/`
+- **`MEMORY.md`** index file loaded at session start (first 200 lines)
+- Topic files loaded on demand when relevant
+- **`/memory`** command to view and manage memories
+- Memory types: user preferences, feedback, project context, references
+- Subagents can maintain their own auto memory
+- Toggle with `autoMemoryEnabled` setting
 
 </v-clicks>
-
-```json
-{
-  "statusline": {
-    "items": [
-      {"type": "git_branch"},
-      {"type": "git_status"},
-      {"type": "cwd"},
-      {"type": "custom", "command": "node -v"}
-    ]
-  }
-}
-```
-
-Perfect for teams wanting standardized context visibility
 
 ---
 
@@ -514,173 +580,6 @@ Update both the README.md and CLAUDE.md files as appropriate.
 If either file does not exist, please create it. Generate the
 CLAUDE.md file as though the user invoked the init task.
 ```
-
----
-
-# Hooks & Automation
-
-<v-clicks>
-
-- **Event-driven workflow automation** with four hook types:
-  - **Command hooks**: Run shell commands on events
-  - **HTTP hooks**: POST JSON to a URL endpoint
-  - **Prompt hooks**: Ask Claude for yes/no decisions
-  - **Agent hooks**: Spawn subagents to verify conditions
-- **Conditional hooks**: `if` field filters when hooks run (permission rule syntax)
-- **PreToolUse**: Modify tool inputs, block dangerous operations
-- **Security controls**: Validate and filter operations before they run
-- **Configuration**: `~/.claude/settings.json` or `.claude/settings.json`
-
-</v-clicks>
-
----
-
-# Hook Examples
-
-<v-clicks>
-
-### Security validation (block dangerous edits)
-```json
-{ "hooks": { "PreToolUse": [{
-  "type": "command", "command": "validate-edit.sh", "if": "Edit(**)"
-}] } }
-```
-
-### Workflow automation (auto-format on write)
-```json
-{ "hooks": { "PreToolUse": [{
-  "type": "command", "command": "prettier --write $FILE", "if": "Write(**)"
-}] } }
-```
-
-### Session lifecycle (report on end)
-```json
-{ "hooks": { "SessionEnd": [{
-  "type": "command", "command": "generate-session-report.sh"
-}] } }
-```
-
-</v-clicks>
-
-**Important**: Treat hook feedback as user input — Claude adjusts if blocked.
-
----
-
-# Hook Events
-
-<v-clicks>
-
-- **Session**: `SessionStart`, `SessionEnd`, `InstructionsLoaded`
-- **Tools**: `PreToolUse`, `PostToolUse`, `PermissionRequest` (command/http hooks only), `PermissionDenied`
-- **Teams**: `TeammateIdle`, `TaskCreated`, `TaskCompleted`
-- **Files**: `FileChanged`, `CwdChanged`, `WorktreeCreate`, `WorktreeRemove`
-- **Config & model**: `ConfigChange`, `Notification`, `PreModelSwitch`, `PostModelSwitch`
-- **Context**: `PreCompact`, `PostCompact`
-- **Output**: `MessageDisplay` — transform or hide assistant message text
-- **MCP**: `Elicitation`, `ElicitationResult`
-- **Agent-level hooks**: Skills and agents define their own hooks in frontmatter
-
-</v-clicks>
-
----
-
-# Hands-on: Hooks
-
-**Lab 6 Part D · 10 min · exercises/python/weather-app**
-
-<v-clicks>
-
-- A `SessionEnd` hook that writes a session summary
-- A `PreToolUse` security validator that blocks a hardcoded API key
-- Write your own formatting hook
-
-</v-clicks>
-
-Steps and prompts: `lab_handout.md`
-
----
-
-# Mods: Code That Runs Inside Claude Code
-
-<v-clicks>
-
-- A **mod** is a plugin whose `hooks/register.js` runs *inside* Claude Code (2.1.287+)
-- Settings hooks shell out to a script; a mod's hooks are functions with three arguments:
-  - **`$`** the mods API (`$.ui`, `$.command`, `$.fs`, `$.model`, ...)
-  - **`e`** the event, as plain data (the tool name and its arguments, the prompt text, ...)
-  - **`next`** passes the event on to the other mods, then to Claude Code's own behavior
-- Three things a hook can do: **guard** (return `{ deny }`), **rewrite** (`next({ ...e, x })`), **observe** (`next(e)`)
-- What only a mod can do: draw a **pane** beside the transcript or a **band** above the prompt, add a `/command` that runs without a Claude turn, restyle the spinner or a tool call's row
-- **Trust**: a mod runs with your permissions, unsandboxed — `claude plugin validate ./some-mod` lists its `hooks:` and `calls:` before you install it
-
-</v-clicks>
-
-Docs: https://code.claude.com/docs/en/plugins/mods/overview
-
----
-
-# Mod Example: Guard and Observe a Tool Call
-
-```js
-// first-mod/hooks/register.js  (plus .claude-plugin/plugin.json and hooks/hooks.json)
-export function register(on) {
-  // Guard: refuse edits to .env files before the tool runs
-  on('tool.call', { tool: 'Edit' }, ($, e, next) =>
-    /(^|\/)\.env(\.|$)/.test(e.file_path)
-      ? { deny: `${e.file_path} is protected` }
-      : next(e))
-
-  // Observe: count every tool call and show it in the status line
-  let calls = 0
-  on('tool.call', async ($, e, next) => {
-    $.ui.status(`tool calls: ${++calls}`)
-    return next(e)
-  })
-}
-```
-
-<v-clicks>
-
-- Load it for one session: `claude --plugin-dir ./first-mod` — edits to `register.js` reload live
-- Check it: `claude plugin validate ./first-mod` · test it with no session: `claude plugin test`
-- Same job as the `PreToolUse` shell hook earlier, with no JSON on stdin and no exit codes
-- Or just ask: *"make a mod that shows the git branch above the prompt"* — Claude writes and reloads it
-
-</v-clicks>
-
----
-
-# Quality-of-Life Lightning Round
-
-<v-clicks>
-
-- **Keybindings** — `/keybindings` edits `~/.claude/keybindings.json`
-- **LSP** — go to definition, find references, call hierarchy through your language server
-- **Output styles** — `/output-style` (Default, Proactive, Concise, Explanatory, Learning), or your own in `.claude/output-styles/`
-- **Resume** — `claude --continue` for the latest session, `claude --resume` for the picker
-- **Images** — drag in, paste with `Ctrl+V` (even on a Mac), or give a path
-- **Notebooks** — reads `.ipynb` files with outputs and edits cells
-
-</v-clicks>
-
-Each of these has its own slide in the Appendix.
-
----
-layout: image-right
-image: https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80
-backgroundSize: cover
----
-
-# Advanced Features
-
-<div class="mt-20">
-  <h2 class="text-4xl font-bold text-white bg-black bg-opacity-60 px-6 py-3 rounded-lg">
-    Power User Capabilities
-  </h2>
-  <p class="text-xl text-white bg-black bg-opacity-60 px-4 py-2 rounded mt-4">
-    Complex features for sophisticated workflows
-  </p>
-</div>
 
 ---
 
@@ -789,195 +688,16 @@ When generating Spring Boot code:
 
 ---
 
-# Plugins: Team-Wide Extensibility
+# Hands-on: Project Memory & a Skill
+
+**Lab 6 Parts F + B (through step 4) · 15 min · exercises/python/weather-app**
 
 <v-clicks>
 
-- **Plugin system** (v2.0.12+) provides installable packages of commands, agents, hooks, and MCP servers
-- **Plugin marketplace**: Discover and share team workflows
-- **Repository-level config**: `extraKnownMarketplaces` for enterprise control
-- **Management commands**:
-  - `/plugin install <name>` - Install from marketplace
-  - `/plugin enable/disable <name>` - Control active plugins
-  - `/plugin marketplace` - Browse available plugins
-  - `/plugin list` - View installed plugins
-
-</v-clicks>
-
----
-
-# Plugin Use Cases
-
-<v-clicks>
-
-### Enterprise Workflows
-- Standardize code generation across teams
-- Enforce security review processes
-- Automate compliance documentation
-- Integrate with internal tools and APIs
-
-### Team Collaboration
-- Share custom commands and agents
-- Distribute MCP server configurations
-- Onboard new team members faster
-
-</v-clicks>
-
----
-
-# Plugin Example
-
-```bash
-# Install company's internal plugin
-/plugin install acme-corp-standards
-
-# Plugin provides:
-# - Slash commands for service generation
-# - Security review hooks
-# - MCP servers for internal APIs
-# - Pre-configured output styles
-```
-
----
-
-# Hands-on: Skill to Plugin
-
-**Lab 6 Part B · 18 min · exercises/python/weather-app**
-
-<v-clicks>
-
-- Watch a built-in skill (xlsx) activate on its own
+- Part F: create a `CLAUDE.md`, then bridge in `AGENTS.md` with `@AGENTS.md`
+- Part B: watch a built-in skill (xlsx) activate on its own
 - Wrap a CLI tool (osquery) as a skill with scoped `allowed-tools`
-- Package it as a plugin and test it with `claude --plugin-dir`
-
-</v-clicks>
-
-Steps and prompts: `lab_handout.md`
-
----
-layout: image-right
-image: https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80
----
-
-# Effort Levels
-
-<v-clicks>
-
-- **`/effort low|medium|high|xhigh|max`** controls reasoning depth (picker labels: Faster ↔ Smarter)
-- **Low**: Fast responses for simple tasks
-- **Medium**: Balanced reasoning
-- **High**: Deep analysis for complex architecture
-- **xhigh**: Very deep reasoning for hard tasks
-- **max**: The ceiling — reserve for the hardest problems
-- **`ultrathink`** in a prompt runs that turn at **xhigh** (2.1.311, current models on the Anthropic API); `CLAUDE_CODE_DISABLE_ULTRATHINK=1` turns it off
-- Can set in skill frontmatter: `effort: high`
-
-</v-clicks>
-
-```bash
-/effort high
-
-# Or raise one turn to xhigh with the keyword
-"Ultrathink about the best approach for implementing OAuth2"
-```
-
----
-
-# Plan Mode
-
-<v-clicks>
-
-- Type **`/plan`** or cycle with `Shift+Tab` to activate
-- Claude presents implementation plan before writing code
-- Review strategy, approve, or modify approach
-- Perfect for complex, multi-file changes
-- **Uses the Plan subagent** behind the scenes
-- **Plan big work in the cloud**: `claude --cloud "…"`, review from any surface, `/teleport` it back
-
-</v-clicks>
-
----
-
-# Code Review: `/code-review`
-
-<v-clicks>
-
-- **`/code-review`** reviews the current diff — or a PR: `/code-review <level> <pr#>` (`/review` is an alias)
-- **Effort dial**: pass a level (`low` … `max`); with none, it reuses the level you typed last
-- **`--max-findings <n>|all`**: report more or fewer than the usual limit; the choice sticks until `--max-findings default`
-- At `high`, `xhigh`, and `max` the review runs in a **background agent** — you keep working
-- **`/code-review ultra`**: deep multi-agent review in the cloud (user-triggered, billed)
-- Claude no longer runs `/code-review` or `/verify` on its own — **invoke them deliberately**
-
-</v-clicks>
-
-```bash
-# Review what you're about to commit
-/code-review
-
-# Deep review of a GitHub PR
-/code-review xhigh 1234
-```
-
----
-
-# Subagents: Specialized Task Handlers
-
-<v-clicks>
-
-- **Autonomous agents** that Claude launches for specialized tasks
-- **Dynamic selection**: Claude chooses appropriate subagent automatically
-- **Model selection**: Different subagents can use different models
-- **Built-in types**:
-  - **Plan**: Strategic task decomposition and planning
-  - **Explore**: Fast codebase exploration and search
-  - **General-purpose**: Full read/write access for complex work
-- **Custom agents**: Define in `.claude/agents/` as markdown with YAML frontmatter
-  - Specify: `model`, `tools`, `effort`, `hooks`, `permissionMode`, `autoCompactWindow`
-  - Claude can also pass `effort` per Agent call — "Explore on Haiku at low, Plan on Opus at high" needs no agent file
-- **Background execution**: `Ctrl+B` to background, `Ctrl+X Ctrl+K` to kill
-- **Worktree isolation**: `isolation: "worktree"` for safe parallel work
-
-</v-clicks>
-
----
-
-# When Claude Uses Subagents
-
-<v-clicks>
-
-### Automatic Activation
-Claude launches subagents when tasks match specialized capabilities:
-
-```bash
-# Triggers Explore subagent (read-only, fast search)
-"Find all API endpoints in this codebase"
-"How does authentication work across the project?"
-
-# Triggers Plan subagent
-/plan or "Create a plan for adding OAuth"
-
-# Triggers General-purpose subagent (full read/write)
-"Generate comprehensive test coverage for UserService"
-"Create API documentation for all REST endpoints"
-```
-
-**You don't manage this** - Claude handles subagent selection automatically for optimal results
-
-</v-clicks>
-
----
-
-# Hands-on: Plan Mode & Custom Subagents
-
-**Lab 6 Parts A + K · 20 min · weather-app, then flask-api**
-
-<v-clicks>
-
-- Part A: plan an error-handling change in Plan Mode, then approve it
-- Part K: build a read-only `security-reviewer` agent (Read, Grep, Glob; Sonnet; high effort)
-- Delegate a review to it and watch only its summary come back
-- Stretch: a `security-fixer` agent with `isolation: "worktree"`
+- Take-home: package it as a plugin and test it with `claude --plugin-dir`
 
 </v-clicks>
 
@@ -985,245 +705,86 @@ Steps and prompts: `lab_handout.md`
 
 ---
 
-# Agent Teams (Research Preview)
+# Hooks & Automation
 
 <v-clicks>
 
-- **Multi-agent orchestration**: A lead agent coordinates multiple teammates
-- **Shared task list**: Tasks with dependencies, ownership, and status tracking
-- **Independent context**: Each teammate gets its own context window
-- **Inter-agent messaging**: Direct messages, broadcasts, and shutdown coordination
-- **Automatic work distribution**: Teammates self-claim tasks as they finish
+- **Event-driven workflow automation** with four hook types:
+  - **Command hooks**: Run shell commands on events
+  - **HTTP hooks**: POST JSON to a URL endpoint
+  - **Prompt hooks**: Ask Claude for yes/no decisions
+  - **Agent hooks**: Spawn subagents to verify conditions
+- **Conditional hooks**: `if` field filters when hooks run (permission rule syntax)
+- **PreToolUse**: Modify tool inputs, block dangerous operations
+- **Security controls**: Validate and filter operations before they run
+- **Configuration**: `~/.claude/settings.json` or `.claude/settings.json`
 
 </v-clicks>
 
-```bash
-# Enable teams (still gated by this env var)
-export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+---
 
-# Example prompt
-"Create a team to refactor the auth module: one agent updates
-the service layer, another updates tests, a third updates docs"
+# Hook Examples
+
+<v-clicks>
+
+### Security validation (block dangerous edits)
+```json
+{ "hooks": { "PreToolUse": [{
+  "type": "command", "command": "validate-edit.sh", "if": "Edit(**)"
+}] } }
 ```
 
-With the env var set, **every session already has one implicit team** — no
-`TeamCreate` step.
-
----
-
-# How Agent Teams Work
-
-<v-clicks>
-
-- **Lead agent** spawns teammates directly via the **Agent tool's `name` parameter** — the old `TeamCreate`/`TeamDelete` tools were removed
-- **Teammates** work independently, report back, claim new tasks
-- **Messaging**: continue a teammate with `SendMessage` (relayed messages don't carry user authority — a security guardrail)
-- **Idle state is normal**: Teammates go idle between turns, wake on message
-- **Hook events**: `TeammateIdle`, `TaskCompleted` for automation
-- **Best for**: Large refactors, multi-file features, parallel code + test work
-
-</v-clicks>
-
-```
-Lead Agent ──→ creates tasks ──→ assigns teammates
-     ↑                              │
-     └── receives results ←─────────┘
-         (via shared task list + messages)
+### Workflow automation (auto-format on write)
+```json
+{ "hooks": { "PreToolUse": [{
+  "type": "command", "command": "prettier --write $FILE", "if": "Write(**)"
+}] } }
 ```
 
----
-
-# Dynamic Workflows
-
-<v-clicks>
-
-- **Orchestrate many background agents** from one request — a handful up to hundreds
-- **Size is a setting**: `/config` → **Dynamic workflow size** — default **medium** (≈10 agents; **small** on Pro). Bigger fan-outs are an explicit ask, and they burn tokens fast
-- **Deterministic control flow**: loops, conditionals, fan-out, and pipelines decide what runs — not model improvisation
-- **Opt-in**: toggle it for the session with `/effort ultracode on` (or Tab inside `/effort`), include the keyword **`ultracode`** in a prompt, or just ask Claude to "use a workflow"
-- **Runs in the background**: keeps each agent's tool output out of your main context; you're notified when it completes
-- **View runs**: `/workflows`
-
-</v-clicks>
-
-<v-clicks>
-
-Built for work one context can't hold: exhaustive multi-dimension code review, a migration swept across many files, or N independent design attempts scored against each other.
-
-</v-clicks>
-
----
-
-# Agent Teams vs. Dynamic Workflows
-
-<v-clicks>
-
-| | **Agent Teams** | **Dynamic Workflows** |
-|---|---|---|
-| Coordination | Model-driven — a lead agent decides | Script-driven — deterministic control flow |
-| Best when | Work shape emerges as you go | You can describe the structure up front |
-| Scale | A handful of teammates | ≈10 agents by default, up to hundreds |
-| Trigger | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + ask | `/effort ultracode on`, `ultracode` keyword, or "use a workflow" |
-
-- **Both** spend tokens at scale — reach for them on genuinely large, parallelizable work, not quick edits
-
-</v-clicks>
-
----
-
-# Background Agents
-
-<v-clicks>
-
-- **Run tasks while you keep working** — your prompt stays free
-- **`Ctrl+B`** to background a running agent
-- **`Ctrl+X Ctrl+K`** to kill all background agents
-- **`/batch` skill**: parallel changes across many files (uses worktrees under the hood)
-- **Subagents** can declare `isolation: "worktree"` in frontmatter for safe parallel writes
-- See the *Git Worktrees* slide next for the worktree mechanics
-
-</v-clicks>
-
----
-
-# Git Worktrees for Parallel Sessions
-
-<v-clicks>
-
-- **Built-in worktree support**: `claude -w` or `claude --worktree`
-  - Automatically creates isolated worktree + new branch
-  - Prompts to keep or remove on session exit
-- **Manual worktrees** also work for full control
-- Share git history while isolating working files
-- Perfect for multi-feature development
-
-</v-clicks>
-
-```bash
-# Built-in (preferred) — automatic isolation
-claude -w                     # Start in new worktree
-claude --worktree             # Same thing
-
-# Manual worktrees for full control
-git worktree add ../project-feature-a -b feature-a
-cd ../project-feature-a && claude
-
-# Manage worktrees
-git worktree list
-git worktree remove ../project-feature-a
+### Session lifecycle (report on end)
+```json
+{ "hooks": { "SessionEnd": [{
+  "type": "command", "command": "generate-session-report.sh"
+}] } }
 ```
 
+</v-clicks>
+
+**Important**: Treat hook feedback as user input — Claude adjusts if blocked.
+
 ---
 
-# Hands-on: Agent Teams vs. Workflows
-
-**Lab 6 Parts H + L · 20 min · certificate-service, then flask-api**
+# Hook Events
 
 <v-clicks>
 
-- Part H: a three-agent team on certificate-service (tests, security, docs)
-- Part L: a multi-angle review as a dynamic workflow with a verify step; watch it in `/workflows`
-- Compare: who decided the split, and what did each one cost?
+- **Session**: `SessionStart`, `SessionEnd`, `InstructionsLoaded`
+- **Tools**: `PreToolUse`, `PostToolUse`, `PermissionRequest` (command/http hooks only), `PermissionDenied`
+- **Teams**: `TeammateIdle`, `TaskCreated`, `TaskCompleted`
+- **Files**: `FileChanged`, `CwdChanged`, `WorktreeCreate`, `WorktreeRemove`
+- **Config & model**: `ConfigChange`, `Notification`, `PreModelSwitch`, `PostModelSwitch`
+- **Context**: `PreCompact`, `PostCompact`
+- **Output**: `MessageDisplay` — transform or hide assistant message text
+- **MCP**: `Elicitation`, `ElicitationResult`
+- **Agent-level hooks**: Skills and agents define their own hooks in frontmatter
+
+</v-clicks>
+
+---
+
+# Hands-on: Hooks
+
+**Lab 6 Part D · 10 min · exercises/python/weather-app**
+
+<v-clicks>
+
+- A `SessionEnd` hook that writes a session summary
+- A `PreToolUse` security validator that blocks a hardcoded API key
+- Write your own formatting hook
 
 </v-clicks>
 
 Steps and prompts: `lab_handout.md`
-
----
-
-# Session Management
-
-<v-clicks>
-
-- **Named sessions**: `/rename my-feature` for easy identification later
-- **PR-linked sessions**: `claude --from-pr 123` resumes with PR context loaded
-- **Session branching**: `/branch` to fork a conversation when you want to try two paths
-- **Resume picker**: `claude --resume` shows up to 50 recent sessions with timestamps
-- **Continue last**: `claude --continue` jumps straight back into the most recent
-- **Auto-memory**: Claude records and recalls context across sessions
-
-</v-clicks>
-
-(Cross-surface handoffs — `--remote`, `/teleport`, `/desktop`, Dispatch — are covered in the Surfaces section.)
-
----
-
-# Auto-Memory
-
-<v-clicks>
-
-- Claude **automatically records and recalls** memories as it works
-- Stored at `~/.claude/projects/<project>/memory/`
-- **`MEMORY.md`** index file loaded at session start (first 200 lines)
-- Topic files loaded on demand when relevant
-- **`/memory`** command to view and manage memories
-- Memory types: user preferences, feedback, project context, references
-- Subagents can maintain their own auto memory
-- Toggle with `autoMemoryEnabled` setting
-
-</v-clicks>
-
----
-
-# Auto Mode
-
-<v-clicks>
-
-- **Eliminates permission prompts** via a background safety classifier that allows or blocks each action
-- **Different from Auto-Accept** (`Shift+Tab`): Auto Mode is intelligent, not blanket
-- **Allows**: local file ops, dependency installs, read-only HTTP, pushing to current branch. **Blocks**: downloading + executing code, production deploys, force pushes, IAM changes
-- **Requirements**: a current Sonnet / Opus / Fable model; all paid plans (Pro, Max, Team, Enterprise, API)
-- **On by default** for interactive sessions since 2.1.284 (`Shift+Tab` to Manual for prompts; `permissions.defaultMode` overrides). `claude -p` gets Auto only first-party with telemetry on — pass `--permission-mode auto` to be sure (2.1.302)
-- Not free: where the classifier runs server-side, even read-only shell commands wait for its verdict
-- **`/auto-mode-setup`** teaches the classifier your environment; `/permissions` → **Recently blocked** shows what it refused and why
-- **Recommended over** `--dangerously-skip-permissions`; the old flag still works for personal/Pro use
-
-</v-clicks>
-
----
-
-# Scheduled Tasks: Three Tiers
-
-<v-clicks>
-
-| | **`/loop`** | **Desktop** | **Cloud** |
-|---|---|---|---|
-| **Runs on** | Your machine | Your machine | Anthropic cloud |
-| **Requires open session** | Yes | No | No |
-| **Persistent** | No | Yes | Yes |
-| **Local file access** | Yes | Yes | No |
-| **Min interval** | 1 minute | 1 minute | 1 hour |
-
-</v-clicks>
-
----
-
-# Using Scheduled Tasks
-
-<v-clicks>
-
-- **`/loop`** — Session-scoped polling: `/loop 5m check if the deployment finished`
-- **Desktop** — Persistent local tasks that survive restarts
-- **Cloud** — Always-on via `/schedule` — runs even with your machine off
-- Cloud tasks clone the repo fresh each run (default branch)
-
-</v-clicks>
-
----
-
-# Channels (Research Preview)
-
-<v-clicks>
-
-- **Push events** from external sources into running Claude Code sessions
-- Supported: **Telegram**, **Discord**, **iMessage** (via plugins)
-- Two-way: Claude reads events and replies back
-- Use cases: chat bridge from phone, CI/monitoring webhooks
-- **`--channels`** flag to enable: `claude --channels plugin:telegram@claude-plugins-official`
-- Requires claude.ai login
-- Enterprise: admin must enable `channelsEnabled`
-
-</v-clicks>
 
 ---
 
@@ -1322,78 +883,151 @@ Steps and prompts: `lab_handout.md`
 
 ---
 
-# Claude Agent SDK
+# Permission Modes
 
 <v-clicks>
 
-- **Available SDKs**: TypeScript (`@anthropic-ai/claude-agent-sdk`), Python (`claude-agent-sdk`), plus `claude -p` on the command line
-- **Build AI-powered coding assistants** into your workflows
-- **Multi-turn conversations** and session management
-- **Custom system prompts** and flexible I/O formats
-- **MCP integration** for extended capabilities
+### Six modes (cycle with `Shift+Tab`)
+- **Manual**: Prompts for each action (the default before 2.1.284)
+- **Accept Edits**: Auto-approves file edits
+- **Plan**: Read-only exploration, no edits
+- **Auto** (the default): Safety classifier decides (all paid plans)
+- **Don't Ask**: Only pre-approved tools run (CI/CD)
+- **Bypass Permissions**: No prompts at all
+- **Hard guard in every mode**: `permissions.blockWritesOutsideWorkingDirectories` (2.1.314) refuses edits outside the working directories, Bypass included
 
 </v-clicks>
 
 ```bash
-# Command line usage
-claude -p "Write a function to calculate Fibonacci numbers"
-claude -p "Generate a hello world function" --output-format json
-```
-
-```typescript
-// TypeScript: npm install @anthropic-ai/claude-agent-sdk
-import { query } from "@anthropic-ai/claude-agent-sdk";
-
-for await (const message of query({
-  prompt: "Write a haiku about foo.py",
-  options: { maxTurns: 3 }
-})) {
-  // Process messages
-}
+# Quick permission profiles via aliases (tool names are case-sensitive)
+alias claude-review='claude --permission-mode plan'                 # read-only exploration
+alias claude-safe='claude --disallowed-tools Bash,WebFetch'         # no shell, no fetches
+alias claude-locked='claude --restricted'                           # no code-running tools at all
+alias claude-ci='claude -p --permission-mode dontAsk --allowed-tools "Read,Grep,Bash(git *)"'
 ```
 
 ---
 
-# SDK in Three Patterns
+# Configuring Permissions
 
 <v-clicks>
 
-### Python — async iteration with options
-```python
-from claude_agent_sdk import query, ClaudeAgentOptions
-
-opts = ClaudeAgentOptions(max_turns=3, allowed_tools=["Read", "Edit"])
-async for msg in query(prompt="Refactor app.py", options=opts):
-    print(msg)
-```
-
-### CI/CD — JSON output for parsing
-```yaml
-- name: AI Code Review
-  run: claude -p "Review PR changes" --output-format json > review.json
-```
-
-### Git hooks — restricted tools, fail fast
-```bash
-# .git/hooks/pre-commit
-claude -p "Check for security issues" --allowedTools "Read,Grep" --permission-prompts none
-```
+- **Fine-grained control** over Claude Code's capabilities
+- **Use `/permissions` UI** to manage tool permissions
+- **Allow/Deny rules** for specific tools and actions
+- **Enterprise policies** for organization-wide control
+- **Permission precedence**: Enterprise → CLI → Project → User
 
 </v-clicks>
 
-Same SDK, three deployment shapes: interactive script, CI step, git hook.
+```bash
+# Example permission rules
+Bash(npm run test:*)     # Allow npm test commands
+Edit(docs/**)           # Allow editing docs directory
+Read(src/*)             # Allow reading source files
+
+# Access permissions UI
+/permissions
+```
 
 ---
 
-# Hands-on: Headless & SDK
-
-**Lab 6 Part M · 10 min · exercises/python/flask-api**
+# Auto Mode
 
 <v-clicks>
 
-- `claude -p … --output-format json | jq` — result, cost, and turn count
-- A pre-commit check that blocks a hardcoded secret
-- Optional: the same call from Python with `claude-agent-sdk`
+- **Eliminates permission prompts** via a background safety classifier that allows or blocks each action
+- **Different from Auto-Accept** (`Shift+Tab`): Auto Mode is intelligent, not blanket
+- **Allows**: local file ops, dependency installs, read-only HTTP, pushing to current branch. **Blocks**: downloading + executing code, production deploys, force pushes, IAM changes
+- **Requirements**: a current Sonnet / Opus / Fable model; all paid plans (Pro, Max, Team, Enterprise, API)
+- **On by default** for interactive sessions since 2.1.284 (`Shift+Tab` to Manual for prompts; `permissions.defaultMode` overrides). `claude -p` gets Auto only first-party with telemetry on — pass `--permission-mode auto` to be sure (2.1.302)
+- Not free: where the classifier runs server-side, even read-only shell commands wait for its verdict
+- **`/auto-mode-setup`** teaches the classifier your environment; `/permissions` → **Recently blocked** shows what it refused and why
+- **Recommended over** `--dangerously-skip-permissions`; the old flag still works for personal/Pro use
+
+</v-clicks>
+
+---
+
+# Code Review: `/code-review`
+
+<v-clicks>
+
+- **`/code-review`** reviews the current diff — or a PR: `/code-review <level> <pr#>` (`/review` is an alias)
+- **Effort dial**: pass a level (`low` … `max`); with none, it reuses the level you typed last
+- **`--max-findings <n>|all`**: report more or fewer than the usual limit; the choice sticks until `--max-findings default`
+- At `high`, `xhigh`, and `max` the review runs in a **background agent** — you keep working
+- **`/code-review ultra`**: deep multi-agent review in the cloud (user-triggered, billed)
+- Claude no longer runs `/code-review` or `/verify` on its own — **invoke them deliberately**
+
+</v-clicks>
+
+```bash
+# Review what you're about to commit
+/code-review
+
+# Deep review of a GitHub PR
+/code-review xhigh 1234
+```
+
+---
+
+# Subagents: Specialized Task Handlers
+
+<v-clicks>
+
+- **Autonomous agents** that Claude launches for specialized tasks
+- **Dynamic selection**: Claude chooses appropriate subagent automatically
+- **Model selection**: Different subagents can use different models
+- **Built-in types**:
+  - **Plan**: Strategic task decomposition and planning
+  - **Explore**: Fast codebase exploration and search
+  - **General-purpose**: Full read/write access for complex work
+- **Custom agents**: Define in `.claude/agents/` as markdown with YAML frontmatter
+  - Specify: `model`, `tools`, `effort`, `hooks`, `permissionMode`, `autoCompactWindow`
+  - Claude can also pass `effort` per Agent call — "Explore on Haiku at low, Plan on Opus at high" needs no agent file
+- **Background execution**: `Ctrl+B` to background, `Ctrl+X Ctrl+K` to kill
+- **Worktree isolation**: `isolation: "worktree"` for safe parallel work
+
+</v-clicks>
+
+---
+
+# When Claude Uses Subagents
+
+<v-clicks>
+
+### Automatic Activation
+Claude launches subagents when tasks match specialized capabilities:
+
+```bash
+# Triggers Explore subagent (read-only, fast search)
+"Find all API endpoints in this codebase"
+"How does authentication work across the project?"
+
+# Triggers Plan subagent
+/plan or "Create a plan for adding OAuth"
+
+# Triggers General-purpose subagent (full read/write)
+"Generate comprehensive test coverage for UserService"
+"Create API documentation for all REST endpoints"
+```
+
+**You don't manage this** - Claude handles subagent selection automatically for optimal results
+
+</v-clicks>
+
+---
+
+# Hands-on: Custom Subagent
+
+**Lab 6 Part K · 15 min · exercises/python/flask-api**
+
+<v-clicks>
+
+- Build a read-only `security-reviewer` agent (Read, Grep, Glob; Sonnet; high effort)
+- Delegate a review to it and watch only its summary come back
+- Stretch: a `security-fixer` agent with `isolation: "worktree"`
 
 </v-clicks>
 
@@ -1401,34 +1035,65 @@ Steps and prompts: `lab_handout.md`
 
 ---
 
-# VS Code Extension
+# Agent Teams (Research Preview)
 
 <v-clicks>
 
-- **Native IDE integration** bringing Claude Code into your editor
-- **In-editor experience**: Work with Claude without leaving VS Code
-- **Context-aware**: Accesses your workspace files and settings
-- **All Claude Code features**: Skills, MCP, custom commands available
-- **Installation**: Search "Claude Code" in VS Code Extensions marketplace
+- **Multi-agent orchestration**: A lead agent coordinates multiple teammates
+- **Shared task list**: Tasks with dependencies, ownership, and status tracking
+- **Independent context**: Each teammate gets its own context window
+- **Inter-agent messaging**: Direct messages, broadcasts, and shutdown coordination
+- **Automatic work distribution**: Teammates self-claim tasks as they finish
+
+</v-clicks>
+
+```bash
+# Enable teams (still gated by this env var)
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+
+# Example prompt
+"Create a team to refactor the auth module: one agent updates
+the service layer, another updates tests, a third updates docs"
+```
+
+With the env var set, **every session already has one implicit team** — no
+`TeamCreate` step.
+
+---
+
+# Dynamic Workflows
+
+<v-clicks>
+
+- **Orchestrate many background agents** from one request — a handful up to hundreds
+- **Size is a setting**: `/config` → **Dynamic workflow size** — default **medium** (≈10 agents; **small** on Pro). Bigger fan-outs are an explicit ask, and they burn tokens fast
+- **Deterministic control flow**: loops, conditionals, fan-out, and pipelines decide what runs — not model improvisation
+- **Opt-in**: toggle it for the session with `/effort ultracode on` (or Tab inside `/effort`), include the keyword **`ultracode`** in a prompt, or just ask Claude to "use a workflow"
+- **Runs in the background**: keeps each agent's tool output out of your main context; you're notified when it completes
+- **View runs**: `/workflows`
+
+</v-clicks>
+
+<v-clicks>
+
+Built for work one context can't hold: exhaustive multi-dimension code review, a migration swept across many files, or N independent design attempts scored against each other.
 
 </v-clicks>
 
 ---
 
-# VS Code Extension Features
+# Agent Teams vs. Dynamic Workflows
 
 <v-clicks>
 
-### Integrated Workflow
-- Reference files with `@` syntax directly in VS Code
-- View diffs and approve changes inline
-- **Session management** with AI-generated titles, rename, fork
-- **Plan view panel** with full markdown and commenting
-- **MCP server management** via `/mcp` in extension
-- **Compaction display** as collapsible card
+| | **Agent Teams** | **Dynamic Workflows** |
+|---|---|---|
+| Coordination | Model-driven — a lead agent decides | Script-driven — deterministic control flow |
+| Best when | Work shape emerges as you go | You can describe the structure up front |
+| Scale | A handful of teammates | ≈10 agents by default, up to hundreds |
+| Trigger | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` + ask | `/effort ultracode on`, `ultracode` keyword, or "use a workflow" |
 
-### Also Available
-- **JetBrains Plugin**: IntelliJ, PyCharm, WebStorm — same core features
+- **Both** spend tokens at scale — reach for them on genuinely large, parallelizable work, not quick edits
 
 </v-clicks>
 
@@ -1571,6 +1236,380 @@ class: text-center
   <h2 class="text-3xl font-bold">Reference Slides</h2>
   <p class="text-lg mt-4">Surfaces in detail, plans and providers, quality-of-life features, cost, context, permissions, troubleshooting, and command reference</p>
 </div>
+
+---
+layout: image-right
+image: https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80
+backgroundSize: cover
+---
+
+# Advanced Features
+
+<div class="mt-20">
+  <h2 class="text-4xl font-bold text-white bg-black bg-opacity-60 px-6 py-3 rounded-lg">
+    Power User Capabilities
+  </h2>
+  <p class="text-xl text-white bg-black bg-opacity-60 px-4 py-2 rounded mt-4">
+    Complex features for sophisticated workflows
+  </p>
+</div>
+
+---
+
+# Plugins: Team-Wide Extensibility
+
+<v-clicks>
+
+- **Plugin system** (v2.0.12+) provides installable packages of commands, agents, hooks, and MCP servers
+- **Plugin marketplace**: Discover and share team workflows
+- **Repository-level config**: `extraKnownMarketplaces` for enterprise control
+- **Management commands**:
+  - `/plugin install <name>` - Install from marketplace
+  - `/plugin enable/disable <name>` - Control active plugins
+  - `/plugin marketplace` - Browse available plugins
+  - `/plugin list` - View installed plugins
+
+</v-clicks>
+
+---
+
+# Plugin Use Cases
+
+<v-clicks>
+
+### Enterprise Workflows
+- Standardize code generation across teams
+- Enforce security review processes
+- Automate compliance documentation
+- Integrate with internal tools and APIs
+
+### Team Collaboration
+- Share custom commands and agents
+- Distribute MCP server configurations
+- Onboard new team members faster
+
+</v-clicks>
+
+---
+
+# Plugin Example
+
+```bash
+# Install company's internal plugin
+/plugin install acme-corp-standards
+
+# Plugin provides:
+# - Slash commands for service generation
+# - Security review hooks
+# - MCP servers for internal APIs
+# - Pre-configured output styles
+```
+
+---
+
+# Mods: Code That Runs Inside Claude Code
+
+<v-clicks>
+
+- A **mod** is a plugin whose `hooks/register.js` runs *inside* Claude Code (2.1.287+)
+- Settings hooks shell out to a script; a mod's hooks are functions with three arguments:
+  - **`$`** the mods API (`$.ui`, `$.command`, `$.fs`, `$.model`, ...)
+  - **`e`** the event, as plain data (the tool name and its arguments, the prompt text, ...)
+  - **`next`** passes the event on to the other mods, then to Claude Code's own behavior
+- Three things a hook can do: **guard** (return `{ deny }`), **rewrite** (`next({ ...e, x })`), **observe** (`next(e)`)
+- What only a mod can do: draw a **pane** beside the transcript or a **band** above the prompt, add a `/command` that runs without a Claude turn, restyle the spinner or a tool call's row
+- **Trust**: a mod runs with your permissions, unsandboxed — `claude plugin validate ./some-mod` lists its `hooks:` and `calls:` before you install it
+
+</v-clicks>
+
+Docs: https://code.claude.com/docs/en/plugins/mods/overview
+
+---
+
+# Mod Example: Guard and Observe a Tool Call
+
+```js
+// first-mod/hooks/register.js  (plus .claude-plugin/plugin.json and hooks/hooks.json)
+export function register(on) {
+  // Guard: refuse edits to .env files before the tool runs
+  on('tool.call', { tool: 'Edit' }, ($, e, next) =>
+    /(^|\/)\.env(\.|$)/.test(e.file_path)
+      ? { deny: `${e.file_path} is protected` }
+      : next(e))
+
+  // Observe: count every tool call and show it in the status line
+  let calls = 0
+  on('tool.call', async ($, e, next) => {
+    $.ui.status(`tool calls: ${++calls}`)
+    return next(e)
+  })
+}
+```
+
+<v-clicks>
+
+- Load it for one session: `claude --plugin-dir ./first-mod` — edits to `register.js` reload live
+- Check it: `claude plugin validate ./first-mod` · test it with no session: `claude plugin test`
+- Same job as the `PreToolUse` shell hook earlier, with no JSON on stdin and no exit codes
+- Or just ask: *"make a mod that shows the git branch above the prompt"* — Claude writes and reloads it
+
+</v-clicks>
+
+---
+
+# How Agent Teams Work
+
+<v-clicks>
+
+- **Lead agent** spawns teammates directly via the **Agent tool's `name` parameter** — the old `TeamCreate`/`TeamDelete` tools were removed
+- **Teammates** work independently, report back, claim new tasks
+- **Messaging**: continue a teammate with `SendMessage` (relayed messages don't carry user authority — a security guardrail)
+- **Idle state is normal**: Teammates go idle between turns, wake on message
+- **Hook events**: `TeammateIdle`, `TaskCompleted` for automation
+- **Best for**: Large refactors, multi-file features, parallel code + test work
+
+</v-clicks>
+
+```
+Lead Agent ──→ creates tasks ──→ assigns teammates
+     ↑                              │
+     └── receives results ←─────────┘
+         (via shared task list + messages)
+```
+
+---
+
+# Background Agents
+
+<v-clicks>
+
+- **Run tasks while you keep working** — your prompt stays free
+- **`Ctrl+B`** to background a running agent
+- **`Ctrl+X Ctrl+K`** to kill all background agents
+- **`/batch` skill**: parallel changes across many files (uses worktrees under the hood)
+- **Subagents** can declare `isolation: "worktree"` in frontmatter for safe parallel writes
+- See the *Git Worktrees* slide next for the worktree mechanics
+
+</v-clicks>
+
+---
+
+# Git Worktrees for Parallel Sessions
+
+<v-clicks>
+
+- **Built-in worktree support**: `claude -w` or `claude --worktree`
+  - Automatically creates isolated worktree + new branch
+  - Prompts to keep or remove on session exit
+- **Manual worktrees** also work for full control
+- Share git history while isolating working files
+- Perfect for multi-feature development
+
+</v-clicks>
+
+```bash
+# Built-in (preferred) — automatic isolation
+claude -w                     # Start in new worktree
+claude --worktree             # Same thing
+
+# Manual worktrees for full control
+git worktree add ../project-feature-a -b feature-a
+cd ../project-feature-a && claude
+
+# Manage worktrees
+git worktree list
+git worktree remove ../project-feature-a
+```
+
+---
+
+# Hands-on: Agent Teams vs. Workflows
+
+**Lab 6 Parts H + L · 20 min · certificate-service, then flask-api**
+
+<v-clicks>
+
+- Part H: a three-agent team on certificate-service (tests, security, docs)
+- Part L: a multi-angle review as a dynamic workflow with a verify step; watch it in `/workflows`
+- Compare: who decided the split, and what did each one cost?
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
+
+---
+
+# Claude Agent SDK
+
+<v-clicks>
+
+- **Available SDKs**: TypeScript (`@anthropic-ai/claude-agent-sdk`), Python (`claude-agent-sdk`), plus `claude -p` on the command line
+- **Build AI-powered coding assistants** into your workflows
+- **Multi-turn conversations** and session management
+- **Custom system prompts** and flexible I/O formats
+- **MCP integration** for extended capabilities
+
+</v-clicks>
+
+```bash
+# Command line usage
+claude -p "Write a function to calculate Fibonacci numbers"
+claude -p "Generate a hello world function" --output-format json
+```
+
+```typescript
+// TypeScript: npm install @anthropic-ai/claude-agent-sdk
+import { query } from "@anthropic-ai/claude-agent-sdk";
+
+for await (const message of query({
+  prompt: "Write a haiku about foo.py",
+  options: { maxTurns: 3 }
+})) {
+  // Process messages
+}
+```
+
+---
+
+# SDK in Three Patterns
+
+<v-clicks>
+
+### Python — async iteration with options
+```python
+from claude_agent_sdk import query, ClaudeAgentOptions
+
+opts = ClaudeAgentOptions(max_turns=3, allowed_tools=["Read", "Edit"])
+async for msg in query(prompt="Refactor app.py", options=opts):
+    print(msg)
+```
+
+### CI/CD — JSON output for parsing
+```yaml
+- name: AI Code Review
+  run: claude -p "Review PR changes" --output-format json > review.json
+```
+
+### Git hooks — restricted tools, fail fast
+```bash
+# .git/hooks/pre-commit
+claude -p "Check for security issues" --allowedTools "Read,Grep" --permission-prompts none
+```
+
+</v-clicks>
+
+Same SDK, three deployment shapes: interactive script, CI step, git hook.
+
+---
+
+# Hands-on: Headless & SDK
+
+**Lab 6 Part M · 10 min · exercises/python/flask-api**
+
+<v-clicks>
+
+- `claude -p … --output-format json | jq` — result, cost, and turn count
+- A pre-commit check that blocks a hardcoded secret
+- Optional: the same call from Python with `claude-agent-sdk`
+
+</v-clicks>
+
+Steps and prompts: `lab_handout.md`
+
+---
+
+# Session Management
+
+<v-clicks>
+
+- **Named sessions**: `/rename my-feature` for easy identification later
+- **PR-linked sessions**: `claude --from-pr 123` resumes with PR context loaded
+- **Session branching**: `/branch` to fork a conversation when you want to try two paths
+- **Resume picker**: `claude --resume` shows up to 50 recent sessions with timestamps
+- **Continue last**: `claude --continue` jumps straight back into the most recent
+- **Auto-memory**: Claude records and recalls context across sessions
+
+</v-clicks>
+
+(Cross-surface handoffs — `--remote`, `/teleport`, `/desktop`, Dispatch — are covered in the Surfaces section.)
+
+---
+
+# Scheduled Tasks: Three Tiers
+
+<v-clicks>
+
+| | **`/loop`** | **Desktop** | **Cloud** |
+|---|---|---|---|
+| **Runs on** | Your machine | Your machine | Anthropic cloud |
+| **Requires open session** | Yes | No | No |
+| **Persistent** | No | Yes | Yes |
+| **Local file access** | Yes | Yes | No |
+| **Min interval** | 1 minute | 1 minute | 1 hour |
+
+</v-clicks>
+
+---
+
+# Using Scheduled Tasks
+
+<v-clicks>
+
+- **`/loop`** — Session-scoped polling: `/loop 5m check if the deployment finished`
+- **Desktop** — Persistent local tasks that survive restarts
+- **Cloud** — Always-on via `/schedule` — runs even with your machine off
+- Cloud tasks clone the repo fresh each run (default branch)
+
+</v-clicks>
+
+---
+
+# Channels (Research Preview)
+
+<v-clicks>
+
+- **Push events** from external sources into running Claude Code sessions
+- Supported: **Telegram**, **Discord**, **iMessage** (via plugins)
+- Two-way: Claude reads events and replies back
+- Use cases: chat bridge from phone, CI/monitoring webhooks
+- **`--channels`** flag to enable: `claude --channels plugin:telegram@claude-plugins-official`
+- Requires claude.ai login
+- Enterprise: admin must enable `channelsEnabled`
+
+</v-clicks>
+
+---
+
+# VS Code Extension
+
+<v-clicks>
+
+- **Native IDE integration** bringing Claude Code into your editor
+- **In-editor experience**: Work with Claude without leaving VS Code
+- **Context-aware**: Accesses your workspace files and settings
+- **All Claude Code features**: Skills, MCP, custom commands available
+- **Installation**: Search "Claude Code" in VS Code Extensions marketplace
+
+</v-clicks>
+
+---
+
+# VS Code Extension Features
+
+<v-clicks>
+
+### Integrated Workflow
+- Reference files with `@` syntax directly in VS Code
+- View diffs and approve changes inline
+- **Session management** with AI-generated titles, rename, fork
+- **Plan view panel** with full markdown and commenting
+- **MCP server management** via `/mcp` in extension
+- **Compaction display** as collapsible card
+
+### Also Available
+- **JetBrains Plugin**: IntelliJ, PyCharm, WebStorm — same core features
+
+</v-clicks>
 
 ---
 layout: image-right
@@ -1979,52 +2018,48 @@ to preserve conversation history and continue working.
 
 ---
 
-# Configuring Permissions
+# Custom Statusline
 
 <v-clicks>
 
-- **Fine-grained control** over Claude Code's capabilities
-- **Use `/permissions` UI** to manage tool permissions
-- **Allow/Deny rules** for specific tools and actions
-- **Enterprise policies** for organization-wide control
-- **Permission precedence**: Enterprise → CLI → Project → User
+- **Configure context display**: `~/.claude/settings.json` or `/statusline`
+- Shows git branch, status, working directory, custom info
+- Keeps important context visible without asking
+- Reduces repetitive status checks
 
 </v-clicks>
 
-```bash
-# Example permission rules
-Bash(npm run test:*)     # Allow npm test commands
-Edit(docs/**)           # Allow editing docs directory
-Read(src/*)             # Allow reading source files
-
-# Access permissions UI
-/permissions
+```json
+{
+  "statusline": {
+    "items": [
+      {"type": "git_branch"},
+      {"type": "git_status"},
+      {"type": "cwd"},
+      {"type": "custom", "command": "node -v"}
+    ]
+  }
+}
 ```
+
+Perfect for teams wanting standardized context visibility
 
 ---
 
-# Permission Modes
+# Quality-of-Life Lightning Round
 
 <v-clicks>
 
-### Six modes (cycle with `Shift+Tab`)
-- **Manual**: Prompts for each action (the default before 2.1.284)
-- **Accept Edits**: Auto-approves file edits
-- **Plan**: Read-only exploration, no edits
-- **Auto** (the default): Safety classifier decides (all paid plans)
-- **Don't Ask**: Only pre-approved tools run (CI/CD)
-- **Bypass Permissions**: No prompts at all
-- **Hard guard in every mode**: `permissions.blockWritesOutsideWorkingDirectories` (2.1.314) refuses edits outside the working directories, Bypass included
+- **Keybindings** — `/keybindings` edits `~/.claude/keybindings.json`
+- **LSP** — go to definition, find references, call hierarchy through your language server
+- **Output styles** — `/output-style` (Default, Proactive, Concise, Explanatory, Learning), or your own in `.claude/output-styles/`
+- **Resume** — `claude --continue` for the latest session, `claude --resume` for the picker
+- **Images** — drag in, paste with `Ctrl+V` (even on a Mac), or give a path
+- **Notebooks** — reads `.ipynb` files with outputs and edits cells
 
 </v-clicks>
 
-```bash
-# Quick permission profiles via aliases (tool names are case-sensitive)
-alias claude-review='claude --permission-mode plan'                 # read-only exploration
-alias claude-safe='claude --disallowed-tools Bash,WebFetch'         # no shell, no fetches
-alias claude-locked='claude --restricted'                           # no code-running tools at all
-alias claude-ci='claude -p --permission-mode dontAsk --allowed-tools "Read,Grep,Bash(git *)"'
-```
+Each of these has its own slide in the Appendix.
 
 ---
 

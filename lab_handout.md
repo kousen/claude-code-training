@@ -1,5 +1,7 @@
 # Claude Code Training Labs
 
+> **Yale ITS edition — Tuesday, November 10, 2026.** We're on the `yale_nov2026` branch of the course repo, not `main`. **In class:** Labs 0, 1, 2, 5 and Lab 6 Parts A, F, D, B (through step 4), E, K. **Take-home:** Labs 3, 4 and Lab 6 Parts C, G, H, L, M, plus the plugin half of Part B; Parts I and J are optional.
+
 This document contains hands-on exercises for learning to use Claude Code for professional development workflows.
 
 ## Table of Contents
@@ -94,7 +96,7 @@ When restricting tools in headless or CI workflows, prefer `--disallowedTools` o
 
 ## Lab 1: First Steps with Claude Code
 
-**Duration**: 5 minutes
+**Duration**: 8 minutes
 **Goal**: Get comfortable with the basic Claude Code interface
 
 ### Setup
@@ -119,6 +121,15 @@ When restricting tools in headless or CI workflows, prefer `--disallowedTools` o
    ```
    Show me the main application files in this project
    ```
+
+4. **The effort dial**: run the same question twice and compare depth, time and cost
+   ```
+   /effort low
+   ```
+   ```
+   Explain how a request flows through this application, from the route to the response
+   ```
+   Then `/effort high` and ask the identical question. Note what the high answer covers that low skipped, and how long each took. `/cost` shows what the two turns used.
 
 ### Expected Outcomes
 
@@ -271,7 +282,7 @@ Continue with your chosen project, focusing on undocumented areas.
 
 ### Setup
 
-Use the `exercises/java/shopping-service` (Grails/Groovy) project or any legacy code you have available. Optionally install two skills from this repo so the modernization and security work are one slash command away:
+Use `exercises/python/flask-api` (the deliberately awful Python API), or `exercises/java/shopping-service` (Grails/Groovy) if you'd rather work in Java. Optionally install two skills from this repo so the modernization and security work are one slash command away:
 
 ```bash
 # From the project root
@@ -281,7 +292,12 @@ cp -r skills/modernize-java skills/security-review ~/.claude/skills/
 
 ### Exercises
 
-1. **Code modernization** (try the skill, then a freeform prompt):
+0. **Branch first, tests first**: create a branch, then build the safety net before changing anything
+   ```
+   Create a branch called refactor-lab. Then write a baseline test suite for this application's current behavior, including the behavior that looks wrong, so we can see what each later change does. Run the tests.
+   ```
+
+1. **Code modernization** (try the skill, then a freeform prompt — on `flask-api`, ask for modern Python: type hints, dataclasses, proper error handling):
    ```
    /modernize-java
    ```
@@ -325,10 +341,10 @@ cp -r skills/modernize-java skills/security-review ~/.claude/skills/
 
 ## Lab 6: Advanced Workflows
 
-**Duration**: ~83 minutes in class for Parts A, B, D, E, H, K, L and M. Parts C, F and G are take-home; Parts I and J are optional
+**Duration**: ~55 minutes in class for Parts A, F, D, B (through step 4), E and K. Parts C, G, H, L, M and the plugin half of B are take-home; Parts I and J are optional
 **Goal**: Master advanced Claude Code features including Plan Mode, Skills, Plugins, Output Styles, Hooks, MCP, Agent Teams, custom subagents, dynamic workflows, headless runs, Surfaces, and Mods
 
-> **In the live class** these parts run right after the slides they go with, not as one block at the end: Part D after hooks; Parts B, A and K after skills and subagents; Parts H and L after agent teams and workflows; Part E after MCP; Part M after the SDK. Parts C (output styles), F (CLAUDE.md vs. skills) and G (feature enhancement) are take-home.
+> **In the live class** these parts run right after the slides they go with, not as one block at the end: Part A after Plan Mode; Parts F and B after CLAUDE.md and skills; Part D after hooks; Part E after MCP; Part K after subagents. Parts C (output styles), G (feature enhancement), H (agent teams), L (dynamic workflows) and M (headless) are take-home, as is the plugin half of Part B.
 
 ### Setup
 
@@ -376,7 +392,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    - **Effort levels**: `/effort low|medium|high|xhigh|max` controls reasoning depth
    - **Keyboard shortcuts**: `Alt+P` (or `/model`) switches models mid-conversation
 
-#### Part B: From Skill to Plugin (18 minutes)
+#### Part B: From Skill to Plugin (18 minutes; in class, stop after the osquery skill in step 4 — the plugin steps are take-home)
 
 > **Note**: As of Claude Code 2.1, **custom slash commands have been merged into skills**. `.claude/skills/<name>/SKILL.md` is the recommended form; `.claude/commands/<name>.md` still works but is the legacy form. If a command and a skill share a name, the skill wins. Skills support frontmatter for `paths`, `allowed-tools`, `context: fork`, `disable-model-invocation`, `user-invocable`, `model`, and `effort`. Hot-reload — edits take effect immediately. Precedence: `Enterprise > Personal > Project`; plugin skills are namespaced separately.
 
@@ -590,7 +606,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    - Observe how MCP extends Claude's capabilities
    - Note the `mcp__` prefix on tool names
 
-#### Part F: CLAUDE.md, AGENTS.md, and Skills vs Commands (5 minutes, take-home)
+#### Part F: CLAUDE.md, AGENTS.md, and Skills vs Commands (5 minutes)
 
 16. **CLAUDE.md creation**:
    ```
@@ -625,7 +641,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    - Observe how multiple advanced features work together
    - Note subagent selection, skill activation, and hook execution
 
-#### Part H: Agent Teams (10 minutes)
+#### Part H: Agent Teams (10 minutes, take-home)
 
 > **Note**: Agent Teams is a research preview feature. Enable it with:
 > ```bash
@@ -760,7 +776,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    ```
    - The fix lands in a separate worktree and branch, not in your working tree
 
-#### Part L: Dynamic Workflows (10 minutes)
+#### Part L: Dynamic Workflows (10 minutes, take-home)
 
 > **Note**: A dynamic workflow is a script that runs background agents: fan-out, loops, and verification steps are decided by code, not improvised by a lead agent. They spend tokens fast. The default size is **medium** (fewer than 10 agents), or **small** (fewer than 5) on a Pro plan with Claude Code 2.1.271 or later. Change it in `/config` → **Dynamic workflow size**; it's advice to Claude, not a hard cap. Opt in with `/effort ultracode on`, the keyword `ultracode` in a prompt, or by asking Claude to "use a workflow."
 
@@ -778,7 +794,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    - Which would you pick for a migration across 200 files? For an exploratory refactor?
    - Compare the cost of the two runs (`/cost`, or the usage shown when each finishes)
 
-#### Part M: Headless Claude in Scripts and CI (10 minutes)
+#### Part M: Headless Claude in Scripts and CI (10 minutes, take-home)
 
 35. **One prompt, JSON out** (in `exercises/python/flask-api`):
    ```bash
