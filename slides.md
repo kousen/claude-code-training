@@ -1169,17 +1169,14 @@ Steps and prompts: `lab_handout.md`
 
 <v-clicks>
 
-- **Eliminates permission prompts** via a background safety classifier
-- Classifier reviews each action and allows/blocks automatically
+- **Eliminates permission prompts** via a background safety classifier that allows or blocks each action
 - **Different from Auto-Accept** (`Shift+Tab`): Auto Mode is intelligent, not blanket
-- **Allows**: Local file ops, dependency installs, read-only HTTP, pushing to current branch
-- **Blocks**: Downloading + executing code, production deploys, force pushes, IAM changes
-- **Requirements**: a current Sonnet / Opus / Fable model; available across paid plans (Pro, Max, Team, Enterprise, API)
-- **On by default** for interactive sessions since 2.1.284; `permissions.defaultMode` or `--permission-mode` overrides. `Shift+Tab` to Manual to get prompts back
-- `claude -p` starts in Auto only on a first-party connection with telemetry on (2.1.302); elsewhere it starts in Manual — pass `--permission-mode auto` to be sure
+- **Allows**: local file ops, dependency installs, read-only HTTP, pushing to current branch. **Blocks**: downloading + executing code, production deploys, force pushes, IAM changes
+- **Requirements**: a current Sonnet / Opus / Fable model; all paid plans (Pro, Max, Team, Enterprise, API)
+- **On by default** for interactive sessions since 2.1.284 (`Shift+Tab` to Manual for prompts; `permissions.defaultMode` overrides). `claude -p` gets Auto only first-party with telemetry on — pass `--permission-mode auto` to be sure (2.1.302)
 - Not free: where the classifier runs server-side, even read-only shell commands wait for its verdict
-- **`/auto-mode-setup`** (2.1.304) teaches the classifier your environment from the project and recent sessions; `/permissions` → **Recently blocked** shows what Auto refused and why
-- **Recommended over** `--dangerously-skip-permissions` for new workflows; the old flag still works for personal/Pro use
+- **`/auto-mode-setup`** teaches the classifier your environment; `/permissions` → **Recently blocked** shows what it refused and why
+- **Recommended over** `--dangerously-skip-permissions`; the old flag still works for personal/Pro use
 
 </v-clicks>
 
