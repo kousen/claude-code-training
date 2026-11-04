@@ -6,12 +6,12 @@ This directory contains advanced hook patterns for Claude Code workflow automati
 
 **Hooks** are programmable callbacks that execute in response to Claude Code events. The vocabulary expanded substantially in 2026.
 
-### Event types (verified against Claude Code 2.1.296, Oct 2026)
+### Event types (verified against Claude Code 2.1.318, Nov 2026)
 
 - **SessionStart / SessionEnd** — wraps the whole session
-- **PreToolUse / PostToolUse** — wraps individual tool calls (PreToolUse can modify tool inputs or block)
+- **PreToolUse / PostToolUse** — wraps individual tool calls (PreToolUse can modify tool inputs or block). Since 2.1.300 a rewritten `updatedInput` is validated like Claude's own input: unknown keys are dropped, and input the tool rejects denies the call
 - **PostToolUseFailure** — fires when a tool call errored; useful for surfacing diagnostics or auto-recovering
-- **UserPromptSubmit** — pre-process the user's prompt before Claude sees it
+- **UserPromptSubmit** — pre-process the user's prompt before Claude sees it. Since 2.1.299 it runs before a skill or custom slash command expands, so blocking the prompt also stops the skill's embedded shell commands
 - **TaskCreated** — fires when Claude creates a task via TaskCreate. ⚠️ Current default models don't use the task tools (removed 2.1.233); export `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` or this hook never fires
 - **DirectoryAdded** — fires after `/add-dir` registers a new working directory mid-session
 - **PreModelSwitch / PostModelSwitch** — fire around a `/model` change; `PreModelSwitch` can block, confirm, or annotate the switch (e.g. refuse an expensive model on a cost-capped project)

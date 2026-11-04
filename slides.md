@@ -866,10 +866,10 @@ image: https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0
 - **`/effort low|medium|high|xhigh|max`** controls reasoning depth (picker labels: Faster ↔ Smarter)
 - **Low**: Fast responses for simple tasks
 - **Medium**: Balanced reasoning
-- **High**: Deep analysis for complex architecture (current Opus defaults here)
+- **High**: Deep analysis for complex architecture
 - **xhigh**: Very deep reasoning for hard tasks
 - **max**: The ceiling — reserve for the hardest problems
-- **Keywords still work**: "think", "think harder", "ultrathink"
+- **`ultrathink`** in a prompt runs that turn at **xhigh** (2.1.311, current models on the Anthropic API); `CLAUDE_CODE_DISABLE_ULTRATHINK=1` turns it off
 - Can set in skill frontmatter: `effort: high`
 
 </v-clicks>
@@ -877,7 +877,7 @@ image: https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0
 ```bash
 /effort high
 
-# Or use keywords in your prompt
+# Or raise one turn to xhigh with the keyword
 "Ultrathink about the best approach for implementing OAuth2"
 ```
 
@@ -1175,8 +1175,10 @@ Steps and prompts: `lab_handout.md`
 - **Allows**: Local file ops, dependency installs, read-only HTTP, pushing to current branch
 - **Blocks**: Downloading + executing code, production deploys, force pushes, IAM changes
 - **Requirements**: a current Sonnet / Opus / Fable model; available across paid plans (Pro, Max, Team, Enterprise, API)
-- **On by default** since 2.1.284, interactive and `-p` alike; `permissions.defaultMode` or `--permission-mode` overrides. `Shift+Tab` to Manual to get prompts back
+- **On by default** for interactive sessions since 2.1.284; `permissions.defaultMode` or `--permission-mode` overrides. `Shift+Tab` to Manual to get prompts back
+- `claude -p` starts in Auto only on a first-party connection with telemetry on (2.1.302); elsewhere it starts in Manual — pass `--permission-mode auto` to be sure
 - Not free: where the classifier runs server-side, even read-only shell commands wait for its verdict
+- **`/auto-mode-setup`** (2.1.304) teaches the classifier your environment from the project and recent sessions; `/permissions` → **Recently blocked** shows what Auto refused and why
 - **Recommended over** `--dangerously-skip-permissions` for new workflows; the old flag still works for personal/Pro use
 
 </v-clicks>
@@ -1468,19 +1470,19 @@ Steps and prompts: `lab_handout.md`
 
 ---
 
-# What's New (Claude Code 2.1.296, Oct 2026)
+# What's New (Claude Code 2.1.318, Nov 2026)
 
 <v-clicks>
 
-- **Auto mode is the default** — fresh sessions start in Auto on every plan; `Shift+Tab` or `permissions.defaultMode` for Manual
-- **Models**: Opus 5.5, Sonnet 5.5, Haiku 5.5 — all 1M context; Opus is now the default on Pro and Team too
-- **`/effort ultracode`** — dynamic workflows are a session toggle, no longer tied to xhigh effort
-- **`/doctor prompt-audit`** — flags CLAUDE.md, skills, agents, and commands written for older models
-- **Hooks**: `onFailure: "block"` makes a crashed or timed-out hook fail closed instead of open
+- **Auto mode is the default** for interactive sessions; `Shift+Tab` or `permissions.defaultMode` for Manual. `claude -p` gets Auto only first-party with telemetry on (2.1.302)
+- **Models**: Opus 5.5, Sonnet 5.5, Haiku 5.5 — all 1M context; Opus is the default on every plan
+- **Idle compaction** — a 200K+ conversation left idle ~54 min is compacted before its prompt cache expires; `/config` → **Idle compaction** turns it off
+- **`/auto-mode-setup`** — reads your project and recent sessions to teach auto mode your environment
+- **`ultrathink`** in a prompt = this turn at **xhigh**; `CLAUDE_CODE_SUBAGENT_EFFORT` sets the level subagents run at
+- **`permissions.blockWritesOutsideWorkingDirectories`** — edits outside the repo refused in *every* mode
+- **Hooks**: `onFailure: "block"` fails closed; a rewritten `updatedInput` is validated, and a rejected rewrite denies the call
 - **Mods**: plugins whose JS/TS hooks run *inside* Claude Code — panes, `/commands`, tool-call guards (see the Mods slide)
-- **`/code-review --max-findings <n>|all`**; the Agent tool takes a per-call `effort`
-- **`claude --desktop`** — open the desktop app on this directory, or on a `--resume`d session
-- **Still worth knowing**: `/skill-doctor`, `/diff`, background sessions (`claude --bg`; `attach`/`logs` accept part of a name)
+- **Still worth knowing**: `/effort ultracode`, `/doctor prompt-audit`, `/usage` (warnings with one-key fixes), `claude auth status` shows when your login expires
 
 </v-clicks>
 
@@ -1963,6 +1965,7 @@ image: https://images.unsplash.com/photo-1586953208448-b95a79798f07?ixlib=rb-4.0
 
 - **`/compact`** compresses conversation history while preserving essentials
 - **Auto-compaction** triggers near the context limit; you'll see a warning first
+- **Idle compaction** (2.1.299): a 200K+ conversation left idle ~54 min is compacted before its one-hour prompt cache expires; `/config` → **Idle compaction** turns it off
 - **Manual is better** when you know a logical chunk is done — pick the seam
 - **Long sessions** stay coherent over hundreds of messages with periodic compacts
 - **`/context`** shows what's currently consuming the window
@@ -2014,15 +2017,16 @@ Read(src/*)             # Allow reading source files
 - **Auto** (the default): Safety classifier decides (all paid plans)
 - **Don't Ask**: Only pre-approved tools run (CI/CD)
 - **Bypass Permissions**: No prompts at all
+- **Hard guard in every mode**: `permissions.blockWritesOutsideWorkingDirectories` (2.1.314) refuses edits outside the working directories, Bypass included
 
 </v-clicks>
 
 ```bash
-# Quick permission profiles via aliases
-alias claude-dev='claude --allowed-tools all'
-alias claude-review='claude --allowed-tools read,grep'
-alias claude-safe='claude --disabled-tools bash,webfetch'
-alias claude-ci='claude --allowed-tools bash,git,test'
+# Quick permission profiles via aliases (tool names are case-sensitive)
+alias claude-review='claude --permission-mode plan'                 # read-only exploration
+alias claude-safe='claude --disallowed-tools Bash,WebFetch'         # no shell, no fetches
+alias claude-locked='claude --restricted'                           # no code-running tools at all
+alias claude-ci='claude -p --permission-mode dontAsk --allowed-tools "Read,Grep,Bash(git *)"'
 ```
 
 ---

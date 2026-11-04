@@ -710,7 +710,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    Make a mod that opens a pane listing the tools Claude has called this session, newest last
    ```
    - Claude loads its built-in `plugin-authoring` skill and writes three files under `~/.claude/dev-mods/<session-id>/<mod-name>/`: `.claude-plugin/plugin.json`, `hooks/hooks.json`, and `hooks/register.tsx`
-   - In `default` or `acceptEdits` mode, approve each file (the mods folder is a protected path)
+   - In Manual or Accept Edits mode, approve each file (the mods folder is a protected path)
    - When the first file lands, Claude Code asks **"Turn on the mods Claude writes in this session?"** — choose **Turn them on**. The mod loads when the turn ends
    - Run `/plugin` and Tab to the **Installed** tab: the mod is listed, with a dim `1 mod active` line
 
@@ -798,7 +798,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
    ```
    Test it: add `API_KEY = 'sk_live_1234567890abcdef'` to `config.py`, then `git add config.py && git commit -m "test"`. The commit should be refused with the reason.
-   - `--permission-prompts none` auto-denies anything that would prompt, so the hook can never hang waiting for you
+   - `--permission-prompts none` auto-denies anything that would prompt, so the hook can never hang waiting for you. It matters more since 2.1.302: `claude -p` starts in Manual (not Auto) on a fresh install, on third-party providers, or with telemetry off
    - Remove the hook when you're done, since it runs on every commit in this repo: `rm "$(git rev-parse --git-path hooks)/pre-commit"`
 
 37. **Optional: the same call from Python**:

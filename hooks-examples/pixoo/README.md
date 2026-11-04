@@ -82,7 +82,7 @@ After saving, restart Claude Code (or start a new session) so it picks up the ch
 
 ## Step 4 — Try it live
 
-1. Open Claude Code in a project where permissions are *not* set to `bypassPermissions` — you need real permission prompts for the demo. The simplest way is to run with the default mode:
+1. Open Claude Code in a project where permissions are *not* set to `bypassPermissions` — you need real permission prompts for the demo. The simplest way is to run in Manual mode:
 
    ```bash
    claude --permission-mode=manual

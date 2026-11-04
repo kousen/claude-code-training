@@ -472,6 +472,7 @@ Subagents are autonomous specialized agents that Claude launches automatically f
     *   Complex subagents (Plan) might use Opus (top tier)
     *   This optimizes both cost and performance
     *   Since 2.1.292 Claude can pass `effort` per Agent call, so "Explore on Haiku at low effort, Plan on Opus at high" needs no custom agent file
+    *   Since 2.1.317 a subagent on a different model no longer inherits the session's effort — it runs at that model's own saved level or default; `CLAUDE_CODE_SUBAGENT_EFFORT` (2.1.316) sets a floor for all of them
 
 *   **Demo: Custom Agent Definitions**
     *   Show `.claude/agents/` directory for defining custom agents
@@ -602,6 +603,7 @@ Demonstrate the multi-surface ecosystem and cloud planning.
 
 *   **Demo: Five Surfaces Overview**
     *   Show the 5 surfaces: CLI, VS Code, JetBrains, Desktop app, Web (claude.ai/code)
+    *   Since 2.1.318 launching `claude` inside an IDE terminal no longer installs the extension — run `/ide` from an outside terminal (or install from the editor's extensions view) before the demo
     *   Emphasize: local surfaces share settings, CLAUDE.md, MCP servers, skills, hooks. Note: web sessions only inherit repo-committed config, not user-level `~/.claude` settings.
     *   **Discussion:** When would you use each surface?
 
