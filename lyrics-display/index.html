@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lyrics Display</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-1: #1b0f33;
+      --bg-2: #0b0716;
+      --card: rgb(255 255 255 / 0.05);
+      --border: rgb(255 255 255 / 0.12);
+      --text: #f6f1ff;
+      --muted: #a99fc4;
+      --pink: #ff4d8d;
+      --amber: #ffb347;
+      --accent: linear-gradient(90deg, var(--pink), var(--amber));
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: var(--sans);
+      display: grid;
+      place-items: center;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 1rem;
+      color: var(--text);
+      background:
+        radial-gradient(60rem 30rem at 15% 0%, rgb(255 77 141 / 0.22), transparent 60%),
+        radial-gradient(50rem 30rem at 90% 100%, rgb(255 179 71 / 0.14), transparent 60%),
+        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+      background-attachment: fixed;
+    }
+    main {
+      width: min(100%, 46rem);
+      padding: clamp(1.25rem, 5vw, 3rem);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.7);
+      backdrop-filter: blur(14px);
+      text-align: center;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      min-height: 1.2rem;
+    }
+    #number {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin: 0;
+    }
+    /* Equalizer bars: still when paused, bouncing while playing */
+    .eq { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+    .eq i {
+      width: 3px;
+      height: 100%;
+      border-radius: 1px;
+      background: var(--pink);
+      transform: scaleY(0.25);
+      transform-origin: bottom;
+    }
+    .playing .eq i { animation: bounce 0.9s ease-in-out infinite alternate; }
+    .eq i:nth-child(2) { animation-delay: -0.3s; }
+    .eq i:nth-child(3) { animation-delay: -0.6s; }
+    .eq i:nth-child(4) { animation-delay: -0.15s; }
+    @keyframes bounce { to { transform: scaleY(1); } }
+
+    #line {
+      font-family: var(--serif);
+      font-size: clamp(1.5rem, 1rem + 3vw, 2.6rem);
+      font-weight: 400;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      min-height: 3.9em;
+      margin: 1.25rem 0 1.5rem;
+      display: grid;
+      place-items: center;
+      text-wrap: balance;
+    }
+    progress {
+      display: block;
+      width: 100%;
+      height: 6px;
+      appearance: none;
+      border: 0;
+      border-radius: 3px;
+      overflow: hidden;
+      background: var(--border);
+    }
+    progress::-webkit-progress-bar { background: var(--border); }
+    progress::-webkit-progress-value { background: var(--accent); transition: width 0.4s ease; }
+    progress::-moz-progress-bar { background: var(--pink); }
+    #counter {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      margin: 0.7rem 0 2rem;
+    }
+    .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+    button {
+      font: inherit;
+      font-weight: 600;
+      padding: 0.8rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+    }
+    button:hover:not(:disabled) { border-color: var(--pink); }
+    button:active:not(:disabled) { transform: scale(0.97); }
+    button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    #play { background: var(--accent); border-color: transparent; color: #1b0f33; }
+    #play[aria-pressed="true"] { background: transparent; border-color: var(--pink); color: var(--text); }
+
+    /* Phones: Play gets its own full-width row on top */
+    @media (max-width: 26rem) {
+      main { border-radius: 18px; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      #play { grid-column: 1 / -1; grid-row: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .playing .eq i { animation: none; transform: scaleY(0.7); }
+      progress::-webkit-progress-value, button { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <p id="number">&nbsp;</p>
+    </header>
+    <p id="line" aria-live="polite">Loading…</p>
+    <progress id="progress" value="0" max="1" aria-label="Progress through lyrics"></progress>
+    <p id="counter">&nbsp;</p>
+    <div class="controls">
+      <button id="prev">Previous</button>
+      <button id="play" aria-pressed="false">Play</button>
+      <button id="next">Next</button>
+    </div>
+  </main>
+
+  <script>
+    const DELAY_MS = 2000;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    const numberEl = document.getElementById('number');
+    const lineEl = document.getElementById('line');
+    const progressEl = document.getElementById('progress');
+    const counterEl = document.getElementById('counter');
+    const prevBtn = document.getElementById('prev');
+    const playBtn = document.getElementById('play');
+    const nextBtn = document.getElementById('next');
+
+    let lines = [];
+    let index = 0;
+    let timer = null;
+
+    // direction: 1 slides the new line up from below, -1 down from above, 0 no animation
+    function render(direction = 0) {
+      const n = index + 1;
+      numberEl.textContent = `Line ${n}`;
+      lineEl.textContent = lines[index];
+      progressEl.max = lines.length;
+      progressEl.value = n;
+      counterEl.textContent = `${n} of ${lines.length} · ${Math.round(n / lines.length * 100)}%`;
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === lines.length - 1;
+      if (direction && !reducedMotion.matches) {
+        lineEl.animate(
+          [{ opacity: 0, transform: `translateY(${direction * 14}px)`, filter: 'blur(4px)' },
+           { opacity: 1, transform: 'none', filter: 'none' }],
+          { duration: 450, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+      }
+    }
+
+    function setPlaying(playing) {
+      playBtn.textContent = playing ? 'Pause' : 'Play';
+      playBtn.setAttribute('aria-pressed', playing);
+      document.body.classList.toggle('playing', playing);
+    }
+
+    function stop() {
+      clearInterval(timer);
+      timer = null;
+      setPlaying(false);
+    }
+
+    function go(delta) {
+      const target = Math.max(0, Math.min(lines.length - 1, index + delta));
+      if (target === index) return;
+      index = target;
+      render(delta);
+    }
+
+    function tick() {
+      // End-of-song behaviour: stop on the last line. To loop instead,
+      // replace the body with: index = (index + 1) % lines.length; render(1);
+      if (index === lines.length - 1) return stop();
+      go(1);
+    }
+
+    prevBtn.onclick = () => go(-1);
+    nextBtn.onclick = () => go(1);
+    playBtn.onclick = () => {
+      if (timer) return stop();
+      if (index === lines.length - 1) { index = 0; render(1); } // replay from the top
+      timer = setInterval(tick, DELAY_MS);
+      setPlaying(true);
+    };
+
+    fetch('lyrics.txt')
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then(text => {
+        lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        if (!lines.length) throw new Error('lyrics.txt is empty');
+        render();
+      })
+      .catch(err => {
+        lineEl.textContent = `Could not load lyrics.txt (${err.message}). ` +
+          'Serve this folder over HTTP: python3 -m http.server 8000';
+        [prevBtn, playBtn, nextBtn].forEach(b => b.disabled = true);
+      });
+  </script>
+</body>
+</html>
