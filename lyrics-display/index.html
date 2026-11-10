@@ -153,8 +153,9 @@
     </div>
   </main>
 
-  <script>
-    const DELAY_MS = 2000;
+  <script type="module">
+    import { createPlayer, parseLyrics } from './lyrics.js';
+
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     const numberEl = document.getElementById('number');
     const lineEl = document.getElementById('line');
@@ -165,11 +166,8 @@
     const nextBtn = document.getElementById('next');
 
     let lines = [];
-    let index = 0;
-    let timer = null;
 
-    // direction: 1 slides the new line up from below, -1 down from above, 0 no animation
-    function render(direction = 0) {
+    function render({ index, playing, direction }) {
       const n = index + 1;
       numberEl.textContent = `Line ${n}`;
       lineEl.textContent = lines[index];
@@ -178,6 +176,9 @@
       counterEl.textContent = `${n} of ${lines.length} · ${Math.round(n / lines.length * 100)}%`;
       prevBtn.disabled = index === 0;
       nextBtn.disabled = index === lines.length - 1;
+      playBtn.textContent = playing ? 'Pause' : 'Play';
+      playBtn.setAttribute('aria-pressed', playing);
+      document.body.classList.toggle('playing', playing);
       if (direction && !reducedMotion.matches) {
         lineEl.animate(
           [{ opacity: 0, transform: `translateY(${direction * 14}px)`, filter: 'blur(4px)' },
@@ -186,50 +187,18 @@
       }
     }
 
-    function setPlaying(playing) {
-      playBtn.textContent = playing ? 'Pause' : 'Play';
-      playBtn.setAttribute('aria-pressed', playing);
-      document.body.classList.toggle('playing', playing);
-    }
-
-    function stop() {
-      clearInterval(timer);
-      timer = null;
-      setPlaying(false);
-    }
-
-    function go(delta) {
-      const target = Math.max(0, Math.min(lines.length - 1, index + delta));
-      if (target === index) return;
-      index = target;
-      render(delta);
-    }
-
-    function tick() {
-      // End-of-song behaviour: stop on the last line. To loop instead,
-      // replace the body with: index = (index + 1) % lines.length; render(1);
-      if (index === lines.length - 1) return stop();
-      go(1);
-    }
-
-    prevBtn.onclick = () => go(-1);
-    nextBtn.onclick = () => go(1);
-    playBtn.onclick = () => {
-      if (timer) return stop();
-      if (index === lines.length - 1) { index = 0; render(1); } // replay from the top
-      timer = setInterval(tick, DELAY_MS);
-      setPlaying(true);
-    };
-
     fetch('lyrics.txt')
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.text();
       })
       .then(text => {
-        lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        lines = parseLyrics(text);
         if (!lines.length) throw new Error('lyrics.txt is empty');
-        render();
+        const player = createPlayer(lines.length, render);
+        prevBtn.onclick = player.prev;
+        nextBtn.onclick = player.next;
+        playBtn.onclick = player.toggle;
       })
       .catch(err => {
         lineEl.textContent = `Could not load lyrics.txt (${err.message}). ` +
