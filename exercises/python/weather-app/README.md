@@ -2,12 +2,12 @@
 This weather web app built with Flask and OpenWeather API displays the weather forecast for any city. I designed a simplistic UI to make it easier for the user to find the relevant information. All HTML, CSS, and Python code was written from scratch and the CSS is optimised for mobile and desktop through the use of CSS grid, flexbox, and media queries.
 
 ## Screenshots (Desktop)
-<img src="/screenshots/weather_app_desktop_home_page_screenshot.png">
-<img src="/screenshots/weather_app_desktop_forecast_page_screenshot.png">
-<img src="/screenshots/weather_app_desktop_error_page_screenshot.png">
+<img src="screenshots/weather_app_desktop_home_page_screenshot.png">
+<img src="screenshots/weather_app_desktop_forecast_page_screenshot.png">
+<img src="screenshots/weather_app_desktop_error_page_screenshot.png">
 
 ## Screenshots (Mobile)
-<img src="/screenshots/weather_app_iphone_forecast_page_screenshot.png" style="width:400px;"> <img src="/screenshots/weather_app_iphone_home_page_screenshot.png" style="width:400px;">
+<img src="screenshots/weather_app_iphone_forecast_page_screenshot.png" style="width:400px;"> <img src="screenshots/weather_app_iphone_home_page_screenshot.png" style="width:400px;">
 
 ## Reflection
 Building a Python project from scratch without relying on a tutorial taught me a lot but I was also able to implement the app's key functionality (getting and displaying weather data) due to the work I did with APIs in Angela Yu's Python bootcamp. While deploying this web app, I  learned about git and version control as well as storing API keys as environment variables with .env and the purpose of .gitignore. This project turned out to be frustrating and complicated at times but I learned and grew a lot as a developer by tackling each problem. For instance, I struggled to make this website responsive because I discovered that the Chrome browser tools are not entirely accurate for the mobile view. Hence, when the app was deployed, the website didn't look the way I expected ore desired on mobile. So I switched to a free desktop application called Responsively and it provided views for multiple devices which allowed me to improve my CSS. In addition, I had difficulty positioning my footer at the bottom of my page and had to refer to [this resource](https://stackoverflow.com/questions/51683107/making-a-footer-stay-at-the-bottom-of-the-page-both-in-mobile-view-and-desktop-v) to adjust my CSS accordingly. 
@@ -15,7 +15,7 @@ Building a Python project from scratch without relying on a tutorial taught me a
 If I were to do this project again, there are a few changes I would make. I would make the website render beautifully on iPads as well by eliminating the space between elements. I also wasn't sure how to add more functionality to this app while maintaining a seamless UI/UX design this time and I would love to do so in the future. E.g. I could add an option for users to specify the country of the city they enter (if multiple countries share the same city name). I could also display the low and high temperatures for each day in the five day forecast instead of only displaying the temperature at noon (which I understand is not an accurate estimate of the overall temperature). It would also be useful to enable location detection to allow the user to get more accurate weather data for their current location by using their precise coordinates instead of relying on the geocoding API provided by OpenWeather.  
 
 ## Useful Resources
-- [OpenWeather API Documentation](https://openweathermap.org/api/one-call-3)
+- [OpenWeather API Documentation](https://openweathermap.org/api)
 - [Guide to Flexbox](https://css-tricks.com/snippets/css/a-guide-to-flexbox/)
 - [Guide to CSS Grid](https://css-tricks.com/snippets/css/complete-guide-grid/)
 - [StackOverflow Post on Centering in CSS Grid](https://stackoverflow.com/questions/45536537/centering-in-css-grid)
