@@ -108,6 +108,7 @@ def test_forecast_keeps_next_four_midday_entries_in_city_time(client, offset):
     assert "99º" not in page  # today's midday entry is excluded
     assert "55º" not in page  # non-midday entries are excluded
     assert "25º" not in page  # capped at four days
+    assert page.count('alt="Rain"') == 4  # forecast icons carry the condition as alt text
     today = local_today(offset)
     assert today.strftime("%A, %B %d") in page
     assert (today + datetime.timedelta(days=1)).strftime("%a") in page

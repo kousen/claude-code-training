@@ -2,7 +2,7 @@
 
 ## Components
 
-The browser, the three Flask routes, the templates and static assets they use, and the three OpenWeather endpoints.
+The browser, the two Flask routes and the error handler, the OpenWeather client module, the templates and static assets, and the three OpenWeather endpoints.
 
 ```mermaid
 flowchart TD
@@ -12,13 +12,20 @@ flowchart TD
     subgraph Flask["Flask app: main.py"]
         Home["home()<br/>GET, POST /"]
         Weather["get_weather(city)<br/>GET /#lt;city#gt;"]
-        Error["error()<br/>GET /error"]
+        Handler["weather_service_error()<br/>handles RequestException"]
+    end
+
+    subgraph Client["OpenWeather client: weather.py"]
+        Geocode["geocode(city)"]
+        CurrentFn["current_weather(lat, lon)"]
+        ForecastFn["forecast(lat, lon, utc_offset, today)"]
     end
 
     subgraph Templates["templates/ (Jinja2)"]
+        BaseT["base.html<br/>head, container, footer"]
         IndexT["index.html<br/>search form"]
         CityT["city.html<br/>current weather + forecast"]
-        ErrorT["error.html<br/>city not found"]
+        ErrorT["error.html<br/>not found / unavailable"]
     end
 
     subgraph Static["static/"]
@@ -26,7 +33,7 @@ flowchart TD
         Icons["assets/*.png<br/>one icon per weather condition"]
     end
 
-    subgraph OWM["OpenWeather API"]
+    subgraph OWM["OpenWeather API (HTTPS)"]
         Geo["Geocoding<br/>/geo/1.0/direct"]
         Current["Current weather<br/>/data/2.5/weather"]
         Forecast["Forecast, 3-hourly<br/>/data/2.5/forecast"]
@@ -34,80 +41,96 @@ flowchart TD
 
     Browser -->|"HTTP"| Home
     Browser -->|"HTTP"| Weather
-    Browser -->|"HTTP"| Error
     Browser -->|"loads"| Static
 
     Home -->|"renders"| IndexT
     Home -->|"POST: redirect"| Weather
     Weather -->|"renders"| CityT
-    Weather -->|"no match: redirect"| Error
-    Error -->|"renders"| ErrorT
+    Weather -->|"unknown city: 404"| ErrorT
+    Handler -->|"502"| ErrorT
 
-    Weather -->|"1. city name"| Geo
-    Weather -->|"2. lat, lon"| Current
-    Weather -->|"3. lat, lon"| Forecast
+    Weather -->|"1"| Geocode
+    Weather -->|"2"| CurrentFn
+    Weather -->|"3"| ForecastFn
+    Geocode --> Geo
+    CurrentFn --> Current
+    ForecastFn --> Forecast
+    Client -.->|"raises RequestException"| Handler
+
+    IndexT -.->|"extends"| BaseT
+    CityT -.->|"extends"| BaseT
+    ErrorT -.->|"extends"| BaseT
 
     Env -.->|"load_dotenv()"| Flask
-    CityT -.->|"icon chosen by condition name"| Icons
+    CityT -.->|"icon name, with a default"| Icons
 ```
 
 ## Request sequence
 
-One city search from form submit to rendered page, including the no-match branch.
+One city search from form submit to rendered page, including the unknown-city and service-failure branches.
 
 ```mermaid
 sequenceDiagram
     actor User
     participant Browser
     participant Flask as Flask app (main.py)
-    participant Geo as OpenWeather Geocoding
-    participant Current as OpenWeather Current
-    participant Forecast as OpenWeather Forecast
+    participant Client as weather.py
+    participant OWM as OpenWeather API
 
     User->>Browser: Type a city, press Enter
     Browser->>Flask: POST / (search=city)
     Flask-->>Browser: 302 redirect to /city
     Browser->>Flask: GET /city
 
-    Flask->>Geo: GET /geo/1.0/direct (q, limit=3, appid)
-    Geo-->>Flask: JSON list of matches
+    Flask->>Client: geocode(city)
+    Client->>OWM: GET /geo/1.0/direct (q, limit=1)
+    OWM-->>Client: JSON list of matches
 
     alt No matches
-        Flask-->>Browser: 302 redirect to /error
-        Browser->>Flask: GET /error
-        Flask-->>Browser: error.html
-    else At least one match
-        Note over Flask: Use lat and lon of the first match
-        Flask->>Current: GET /data/2.5/weather (lat, lon, units=metric)
-        Current-->>Flask: temp, min, max, wind, condition
-        Flask->>Forecast: GET /data/2.5/forecast (lat, lon, units=metric)
-        Forecast-->>Flask: 3-hourly entries for 5 days
-        Note over Flask: Keep the 12:00 entries for the next 4 days
-        Flask-->>Browser: city.html
-        Browser->>Flask: GET /static css and icons
-        Flask-->>Browser: Static files
+        Client-->>Flask: None
+        Flask-->>Browser: 404 error.html (city does not exist)
+    else Match found
+        Client-->>Flask: lat, lon
+        Flask->>Client: current_weather(lat, lon)
+        Client->>OWM: GET /data/2.5/weather (units=metric)
+        OWM-->>Client: temp, min, max, wind, condition, timezone
+        Client-->>Flask: current conditions + UTC offset
+        Note over Flask: City-local today = UTC now + offset
+        Flask->>Client: forecast(lat, lon, utc_offset, today)
+        Client->>OWM: GET /data/2.5/forecast (units=metric)
+        OWM-->>Client: 3-hourly entries for 5 days
+        Note over Client: Keep the midday entry for each of the next 4 local days
+        Client-->>Flask: four forecast days
+        Flask-->>Browser: 200 city.html
     end
 
-    Browser-->>User: Weather page
+    opt Any OpenWeather call fails (network, timeout, bad key, 5xx)
+        Client-->>Flask: raises RequestException
+        Flask-->>Browser: 502 error.html (service unavailable)
+    end
+
+    Browser-->>User: Page
 ```
 
 ## `get_weather()` flow
 
-The decision logic inside the `/<city>` route in `main.py`.
+The decision logic for the `/<city>` route across `main.py` and `weather.py`.
 
 ```mermaid
 flowchart TD
-    Start(["GET /#lt;city#gt;"]) --> Format["Capitalize city name<br/>Format today's date"]
-    Format --> GeoCall["Call Geocoding API<br/>q = city, limit = 3"]
-    GeoCall --> Found{"Any matches?"}
-    Found -->|"No"| ErrorPage(["Redirect to /error"])
-    Found -->|"Yes"| Coords["Take lat and lon<br/>of the first match"]
-    Coords --> CurCall["Call Current Weather API<br/>units = metric"]
-    CurCall --> Status{"HTTP status OK?"}
-    Status -->|"No"| Raise(["raise_for_status()<br/>HTTPError, 500 response"])
-    Status -->|"Yes"| Extract["Extract temp, min, max,<br/>wind speed, condition"]
-    Extract --> FcCall["Call Forecast API<br/>same lat, lon, units"]
-    FcCall --> Filter["Keep entries at 12:00:00<br/>that are not today's date"]
-    Filter --> Slice["Take the first 4<br/>Label each by its own date"]
+    Start(["GET /#lt;city#gt;"]) --> Format["Capitalize city name"]
+    Format --> GeoCall["geocode(city)<br/>Geocoding API, limit = 1"]
+    GeoCall --> Found{"Any match?"}
+    Found -->|"No"| NotFound(["Render error.html, 404"])
+    Found -->|"Yes"| CurCall["current_weather(lat, lon)<br/>temp, min, max, wind, condition, UTC offset"]
+    CurCall --> Today["City-local today =<br/>UTC now + offset"]
+    Today --> FcCall["forecast(lat, lon, utc_offset, today)"]
+    FcCall --> Filter["Convert each entry to local time<br/>Keep 11:00-13:59 on days after today"]
+    Filter --> Slice["Take the first 4<br/>Pick icon, default if no artwork"]
     Slice --> Render(["Render city.html<br/>today + 4 forecast days"])
+
+    GeoCall -.->|"request fails"| Fail
+    CurCall -.->|"request fails"| Fail
+    FcCall -.->|"request fails"| Fail
+    Fail(["weather_service_error()<br/>log exception type, render error.html, 502"])
 ```

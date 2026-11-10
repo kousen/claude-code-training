@@ -1,6 +1,39 @@
 # Weather App
 This weather web app built with Flask and OpenWeather API displays the weather forecast for any city. I designed a simplistic UI to make it easier for the user to find the relevant information. All HTML, CSS, and Python code was written from scratch and the CSS is optimised for mobile and desktop through the use of CSS grid, flexbox, and media queries.
 
+## Setup
+You need Python 3 and a free [OpenWeather API key](https://openweathermap.org/api).
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+echo 'OWM_API_KEY=your-key-here' > .env
+```
+
+## Running
+```bash
+flask --app main run --debug     # local development, http://127.0.0.1:5000
+gunicorn main:app                # production server (also what the Procfile runs)
+```
+
+The app refuses to start if `OWM_API_KEY` is not set.
+
+## Tests
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The tests mock every OpenWeather call, so they need no network and no real key.
+
+## Project layout
+- `main.py`: the Flask routes and the error handler
+- `weather.py`: the OpenWeather client (geocoding, current weather, forecast)
+- `templates/`: `base.html` plus one page each for search, city and error
+- `tests/`: pytest suite
+- `docs/architecture.md`: architecture diagrams
+
 ## Screenshots (Desktop)
 <img src="/screenshots/weather_app_desktop_home_page_screenshot.png">
 <img src="/screenshots/weather_app_desktop_forecast_page_screenshot.png">

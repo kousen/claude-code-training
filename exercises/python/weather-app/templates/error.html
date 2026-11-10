@@ -1,26 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="{{url_for('static', filename='css/main.css')}}">
-        <title> Error </title>
-    </head>
-    <body>
-        <main>
-            <div class="container">
+{% extends "base.html" %}
+{% block title %}Error{% endblock %}
+{% block content %}
                 <div class="background">
-                    <img src="/static/assets/404_error_background.jpg" alt="" id="error-background">
+                    <img src="{{ url_for('static', filename='assets/404_error_background.jpg') }}" alt="" id="error-background">
                 </div>
                 <div class="change-button">
-                    <img class="chevron-icon" src="/static/assets/chevron-left.png" alt="">
-                    <a href="{{ url_for('home')}}"> CHANGE CITY </a>
+                    <img class="chevron-icon" src="{{ url_for('static', filename='assets/chevron-left.png') }}" alt="">
+                    <a href="{{ url_for('home') }}"> CHANGE CITY </a>
                 </div>
                 <h2 id="error-text"> {{ message or "This city does not exist. Please try again." }} </h2>
-                <div class="footer">
-                    <a href="https://rachanahegde.squarespace.com/"> © Rachana Hegde </a>
-                </div>
-            </div>
-        </main>
-    </body>
-</html>
+{% endblock %}

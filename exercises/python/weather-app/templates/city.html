@@ -1,57 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- displays site properly based on user's device -->
-        <link rel="stylesheet" href="{{url_for('static', filename='css/main.css')}}">
-        <title> Weather Forecast </title>
-    </head>
-    <body>
-        <main> 
-            <div class="container">
+{% extends "base.html" %}
+{% block title %}Weather Forecast{% endblock %}
+{% macro asset(name) %}{{ url_for('static', filename='assets/' ~ name ~ '.png') }}{% endmacro %}
+{% block content %}
                 <div class="change-button">
-                    <img class="chevron-icon" src="/static/assets/chevron-left.png" alt="">
-                    <a href="{{ url_for('home')}}"> CHANGE CITY </a>
+                    <img class="chevron-icon" src="{{ asset('chevron-left') }}" alt="">
+                    <a href="{{ url_for('home') }}"> CHANGE CITY </a>
                 </div>
                 <div class="city-header">
                     <h1> {{ city_name }} </h1>
                     <h2> {{ current_date }} </h2>
                 </div>
                 <div class="daily-forecast">
-                    <p id="current-temp"> {{ current_temp }}ºC </p>
+                    <p id="current-temp"> {{ current.temp }}ºC </p>
                     <div class="daily-section">
-                        <img class="weather-icon" src="/static/assets/{{ current_icon }}.png" alt="">
-                        <p class="forecast-text"> {{ current_weather }} </p>
-                    </div>  
+                        <img class="weather-icon" src="{{ asset(current.icon) }}" alt="">
+                        <p class="forecast-text"> {{ current.condition }} </p>
+                    </div>
                     <div class="daily-section">
-                        <img class="weather-icon" src="/static/assets/thermometer.png" alt="">
-                        <p class="forecast-text"> {{min_temp }}° - {{ max_temp }}° </p>
-                    </div> 
+                        <img class="weather-icon" src="{{ asset('thermometer') }}" alt="">
+                        <p class="forecast-text"> {{ current.min_temp }}° - {{ current.max_temp }}° </p>
+                    </div>
                     <div class="daily-section">
-                        <img class="weather-icon" src="/static/assets/wind.png" alt="">
-                        <p class="forecast-text"> {{ wind_speed }} meter/sec </p>
-                    </div> 
+                        <img class="weather-icon" src="{{ asset('wind') }}" alt="">
+                        <p class="forecast-text"> {{ current.wind_speed }} meter/sec </p>
+                    </div>
                 </div>
                 <div class="divider"> </div>
                 <h2> 5-DAY FORECAST </h2>
                 <div class="five-day">
                     <div class="forecast-item">
                         <p> {{ today_label }} </p>
-                        <img class="weather-icon" src="/static/assets/{{ current_icon }}.png" alt="">
-                        <p> {{ current_temp }}º </p>
+                        <img class="weather-icon" src="{{ asset(current.icon) }}" alt="{{ current.condition }}">
+                        <p> {{ current.temp }}º </p>
                     </div>
                     {% for day in forecast %}
                     <div class="forecast-item">
                         <p> {{ day.day }} </p>
-                        <img class="weather-icon" src="/static/assets/{{ day.icon }}.png" alt="">
+                        <img class="weather-icon" src="{{ asset(day.icon) }}" alt="{{ day.condition }}">
                         <p> {{ day.temp }}º </p>
                     </div>
                     {% endfor %}
                 </div>
-                <div class="footer">
-                    <a href="https://rachanahegde.squarespace.com/"> © Rachana Hegde </a>  
-                </div>
-            </div>
-        </main>
-    </body>
-</html>
+{% endblock %}
