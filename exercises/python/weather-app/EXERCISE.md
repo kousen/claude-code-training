@@ -9,20 +9,45 @@ This is a simple Python weather application that fetches weather data from an AP
 - Improve error handling and edge cases
 - Create professional documentation
 
+## Setup Instructions
+
+1. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Set up your API key (required). Get a free key from https://openweathermap.org/api,
+   then create a file named `.env` in this folder containing:
+   ```text
+   OWM_API_KEY=your-api-key-here
+   ```
+
+4. Run the app, then open http://127.0.0.1:5000 and search for a city:
+   ```bash
+   flask --app main run --debug
+   ```
+
 ## Exercise Tasks
 
 ### Task 1: Code Exploration (10 minutes)
-1. Start Claude Code in this directory
-2. Ask Claude to analyze the project structure
-3. Have Claude explain the main components and data flow
-4. Identify potential issues or improvements
+1. Create a new branch for this exercise
+2. Start Claude Code in this directory
+3. Ask Claude to analyze the project structure
+4. Have Claude explain the main components and data flow
+5. Identify potential issues or improvements
 
-**Example prompts:**
-```
-"Give me an overview of this weather app"
-"Explain how the API integration works"
-"What design patterns are used here?"
-"Identify any potential bugs or issues"
+**Example prompts** (one per line):
+```text
+Give me an overview of this weather app
+Explain how the API integration works
+What design patterns are used here?
+Identify any potential bugs or issues
 ```
 
 ### Task 2: Test Generation (15 minutes)
@@ -31,12 +56,12 @@ This is a simple Python weather application that fetches weather data from an AP
 3. Add integration tests for the API calls
 4. Implement mock objects for external dependencies
 
-**Example prompts:**
-```
-"Create comprehensive unit tests for the weather service"
-"Add tests for error scenarios like network failures"
-"Generate tests for invalid city names and API responses"
-"Set up proper mocking for the external API calls"
+**Example prompts** (one per line):
+```text
+Create comprehensive unit tests for the weather service
+Add tests for error scenarios like network failures
+Generate tests for invalid city names and API responses
+Set up proper mocking for the external API calls
 ```
 
 ### Task 3: Error Handling (10 minutes)
@@ -45,11 +70,11 @@ This is a simple Python weather application that fetches weather data from an AP
 3. Implement user-friendly error messages
 4. Add logging for debugging
 
-**Example prompts:**
-```
-"Improve error handling in the API client"
-"Add custom exceptions for different error scenarios"
-"Implement proper logging throughout the application"
+**Example prompts** (one per line):
+```text
+Improve error handling in the API client
+Add custom exceptions for different error scenarios
+Implement proper logging throughout the application
 ```
 
 ### Task 4: Documentation (10 minutes)
@@ -58,30 +83,12 @@ This is a simple Python weather application that fetches weather data from an AP
 3. Create usage examples
 4. Document the API requirements
 
-**Example prompts:**
+**Example prompts** (one per line):
+```text
+Create a professional README for this project
+Add detailed docstrings following Python conventions
+Generate usage examples for the documentation
 ```
-"Create a professional README for this project"
-"Add detailed docstrings following Python conventions"
-"Generate usage examples for the documentation"
-```
-
-## Setup Instructions
-
-1. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Set up your API key (if required):
-   ```bash
-   export OWM_API_KEY="your-api-key-here"
-   ```
 
 ## Success Criteria
 - [ ] All main functions have comprehensive test coverage
@@ -97,7 +104,7 @@ This is a simple Python weather application that fetches weather data from an AP
 - Don't forget to commit your changes as you go
 
 ## Bonus Challenges
-- Add weather forecast functionality
+- Show each forecast day's low and high instead of only the noon temperature
 - Implement caching to reduce API calls
 - Create a simple CLI interface
 - Add support for multiple weather services
