@@ -1,6 +1,6 @@
 """OpenWeather API client: plain functions that return just what the pages need.
 
-Every function raises requests.RequestException on a network failure, timeout or
+Every function that calls OpenWeather raises requests.RequestException on a network failure, timeout or
 non-2xx response. The Flask app turns that into an error page in one place.
 """
 from __future__ import annotations

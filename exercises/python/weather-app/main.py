@@ -28,7 +28,7 @@ def home():
 
 @app.route("/<city>")
 def get_weather(city: str):
-    """Show current weather and a four-day forecast for a city, or a 404 page if it's unknown."""
+    """Show today's weather plus a four-day forecast (the page's "5-day forecast"), or a 404 page for an unknown city."""
     city_name = string.capwords(city)
     coordinates = weather.geocode(city_name)
     if coordinates is None:

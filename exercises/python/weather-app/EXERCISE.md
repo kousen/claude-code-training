@@ -19,7 +19,7 @@ This is a simple Python weather application that fetches weather data from an AP
 
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements-dev.txt  # app dependencies plus pytest
    ```
 
 3. Set up your API key (required). Get a free key from https://openweathermap.org/api,
@@ -95,7 +95,7 @@ Generate usage examples for the documentation
 - [ ] Error handling covers all external API interactions
 - [ ] Documentation clearly explains setup and usage
 - [ ] Code follows Python best practices
-- [ ] All tests pass successfully
+- [ ] All tests pass successfully (run `pytest`)
 
 ## Tips
 - Use Claude's ability to understand the codebase quickly
