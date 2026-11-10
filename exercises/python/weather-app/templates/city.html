@@ -20,7 +20,7 @@
                 <div class="daily-forecast">
                     <p id="current-temp"> {{ current_temp }}ºC </p>
                     <div class="daily-section">
-                        <img class="weather-icon" src="/static/assets/{{ current_weather.lower() }}.png" alt="">
+                        <img class="weather-icon" src="/static/assets/{{ current_icon }}.png" alt="">
                         <p class="forecast-text"> {{ current_weather }} </p>
                     </div>  
                     <div class="daily-section">
@@ -37,13 +37,13 @@
                 <div class="five-day">
                     <div class="forecast-item">
                         <p> {{ today_label }} </p>
-                        <img class="weather-icon" src="/static/assets/{{ current_weather.lower() }}.png" alt="">
+                        <img class="weather-icon" src="/static/assets/{{ current_icon }}.png" alt="">
                         <p> {{ current_temp }}º </p>
                     </div>
                     {% for day in forecast %}
                     <div class="forecast-item">
                         <p> {{ day.day }} </p>
-                        <img class="weather-icon" src="/static/assets/{{ day.weather.lower() }}.png" alt="">
+                        <img class="weather-icon" src="/static/assets/{{ day.icon }}.png" alt="">
                         <p> {{ day.temp }}º </p>
                     </div>
                     {% endfor %}
