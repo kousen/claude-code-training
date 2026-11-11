@@ -11,6 +11,10 @@ java {
 
 repositories { mavenCentral() }
 
+// Boot 3.4.4 manages Testcontainers 1.20.6, which Docker Engine 29+ rejects
+// (client API version too old). Remove this override once Boot manages >= 1.21.4.
+extra["testcontainers.version"] = "1.21.4"
+
 dependencies {
     // Spring Boot dependencies
     implementation("org.springframework.boot:spring-boot-starter-web")
