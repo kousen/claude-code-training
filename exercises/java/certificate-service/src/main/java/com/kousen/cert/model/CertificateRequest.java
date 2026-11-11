@@ -34,19 +34,4 @@ public record CertificateRequest(
             "Mockito Made Clear",
             "Modern Java Recipes"
     );
-    
-    // Custom validation exception that tracks the field name
-    // Keeping this for backward compatibility with existing code
-    public static class ValidationException extends IllegalArgumentException {
-        private final String field;
-        
-        public ValidationException(String field, String message) {
-            super(message);
-            this.field = field;
-        }
-        
-        public String getField() {
-            return field;
-        }
-    }
 }

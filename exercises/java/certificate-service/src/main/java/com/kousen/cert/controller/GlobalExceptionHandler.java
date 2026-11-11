@@ -1,6 +1,5 @@
 package com.kousen.cert.controller;
 
-import com.kousen.cert.model.CertificateRequest.ValidationException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -54,22 +53,6 @@ public class GlobalExceptionHandler {
         });
         
         problemDetail.setProperty("errors", errors);
-        return problemDetail;
-    }
-    
-    @ExceptionHandler(ValidationException.class)
-    public ProblemDetail handleValidationException(ValidationException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST, ex.getMessage());
-        
-        problemDetail.setTitle("Validation Error");
-        problemDetail.setType(URI.create("https://api.certificate-service.com/errors/validation"));
-        problemDetail.setProperty("timestamp", Instant.now());
-        
-        Map<String, String> validationErrors = new HashMap<>();
-        validationErrors.put(ex.getField(), ex.getMessage());
-        problemDetail.setProperty("errors", validationErrors);
-        
         return problemDetail;
     }
     

@@ -30,7 +30,7 @@ class PdfBoxGeneratorPropertyTest {
         String subtitle = "Test Book";
         
         // Act
-        Path pdfPath = generator.createCertificatePdf(title, name, subtitle, null);
+        Path pdfPath = generator.createCertificatePdfWithQrData(title, name, subtitle, null);
         
         try {
             // Assert
@@ -70,7 +70,7 @@ class PdfBoxGeneratorPropertyTest {
         String name = "John Doe";
         
         // Act
-        Path pdfPath = generator.createCertificatePdf(title, name, bookTitle, null);
+        Path pdfPath = generator.createCertificatePdfWithQrData(title, name, bookTitle, null);
         
         try {
             // Assert
@@ -99,7 +99,7 @@ class PdfBoxGeneratorPropertyTest {
         String subtitle = "Test Book";
         
         // Act
-        Path pdfPath = generator.createCertificatePdf(title, name, subtitle, null);
+        Path pdfPath = generator.createCertificatePdfWithQrData(title, name, subtitle, null);
         
         try {
             // Assert
@@ -136,7 +136,7 @@ class PdfBoxGeneratorPropertyTest {
         String title = "Certificate of Ownership";
         
         // Act
-        Path pdfPath = generator.createCertificatePdf(title, name, bookTitle, null);
+        Path pdfPath = generator.createCertificatePdfWithQrData(title, name, bookTitle, null);
         
         try {
             // Assert
@@ -169,7 +169,7 @@ class PdfBoxGeneratorPropertyTest {
         try {
             // Create multiple certificates in sequence
             for (int i = 0; i < count; i++) {
-                paths[i] = generator.createCertificatePdf(title, names[i], bookTitles[i], null);
+                paths[i] = generator.createCertificatePdfWithQrData(title, names[i], bookTitles[i], null);
                 
                 // Verify each certificate
                 assertThat(paths[i]).exists();

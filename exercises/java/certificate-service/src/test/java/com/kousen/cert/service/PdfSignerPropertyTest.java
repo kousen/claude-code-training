@@ -47,7 +47,7 @@ class PdfSignerPropertyTest {
         // Arrange - Create a PDF
         String title = "Certificate of Ownership";
         PdfBoxGenerator generator = initGenerator();
-        Path unsignedPdf = generator.createCertificatePdf(title, name, bookTitle, null);
+        Path unsignedPdf = generator.createCertificatePdfWithQrData(title, name, bookTitle, null);
 
         try {
             // Extract text before signing
@@ -129,7 +129,7 @@ class PdfSignerPropertyTest {
                 PdfContent content = contents.get(i);
 
                 // Create PDF
-                unsignedPdfs[i] = generator.createCertificatePdf(
+                unsignedPdfs[i] = generator.createCertificatePdfWithQrData(
                         "Certificate of Ownership",
                         content.name,
                         content.bookTitle,
