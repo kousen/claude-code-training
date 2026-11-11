@@ -40,6 +40,16 @@ public class PdfBoxGenerator {
      */
     public Path createCertificatePdfWithQrData(String title, String name, String subtitle, byte[] qrCodeData) throws IOException {
         Path pdfPath = Files.createTempFile("cert-", ".pdf");
+        try {
+            drawCertificate(pdfPath, title, name, subtitle, qrCodeData);
+            return pdfPath;
+        } catch (IOException | RuntimeException e) {
+            Files.deleteIfExists(pdfPath);
+            throw e;
+        }
+    }
+
+    private void drawCertificate(Path pdfPath, String title, String name, String subtitle, byte[] qrCodeData) throws IOException {
         float pageWidth = PDRectangle.A4.getHeight();
         float pageHeight = PDRectangle.A4.getWidth();
         try (PDDocument document = new PDDocument()) {
@@ -139,7 +149,6 @@ public class PdfBoxGenerator {
                 }
             }
         }
-        return pdfPath;
     }
     /**
      * Adds an in-memory QR code to the certificate.

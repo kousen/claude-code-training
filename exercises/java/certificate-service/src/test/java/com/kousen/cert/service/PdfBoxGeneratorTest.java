@@ -58,12 +58,26 @@ class PdfBoxGeneratorTest {
     }
 
     @Test
-    void shouldRejectQrCodeBytesThatAreNotAnImage() {
+    void shouldRejectQrCodeBytesThatAreNotAnImage() throws IOException {
         byte[] notAnImage = "not a png".getBytes();
+
+        long tempFilesBefore = countTempCertificates();
 
         assertThatThrownBy(() ->
                 generator.createCertificatePdfWithQrData(TITLE, "Jane Smith", "Another Test Book", notAnImage))
-                .isInstanceOf(Exception.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not supported");
+
+        assertThat(countTempCertificates())
+                .as("a failed generation must not leave its temp file behind")
+                .isEqualTo(tempFilesBefore);
+    }
+
+    private long countTempCertificates() throws IOException {
+        Path tempDir = Path.of(System.getProperty("java.io.tmpdir"));
+        try (var files = Files.list(tempDir)) {
+            return files.filter(p -> p.getFileName().toString().matches("cert-.*\\.pdf")).count();
+        }
     }
 
     private String textOf(Path pdf) throws IOException {
