@@ -23,24 +23,8 @@ public class VerificationController {
     private final String certificateFingerprint;
     private final AnalyticsService analyticsService;
 
-    // Default constructor for tests
-    public VerificationController() {
-        this("${certificate.keystore}", null);
-    }
-
-    public VerificationController(AnalyticsService analyticsService) {
-        this("${certificate.keystore}", analyticsService);
-    }
-
     public VerificationController(@Value("${certificate.keystore}") String keystorePath, AnalyticsService analyticsService) {
-        String fingerprint;
-        try {
-            fingerprint = generateCertificateFingerprint(keystorePath);
-        } catch (Exception e) {
-            logger.warn("Could not generate certificate fingerprint: {}", e.getMessage());
-            fingerprint = "Certificate fingerprint not available during test";
-        }
-        this.certificateFingerprint = fingerprint;
+        this.certificateFingerprint = generateCertificateFingerprint(keystorePath);
         this.analyticsService = analyticsService;
     }
 
@@ -61,8 +45,8 @@ public class VerificationController {
         model.addAttribute("issueDate", issueDate != null ? issueDate : "Not specified");
         model.addAttribute("certificateFingerprint", certificateFingerprint);
 
-        // Track verification event if analytics service is available and certificate ID is provided
-        if (analyticsService != null && certificateId != null && !certificateId.isEmpty()) {
+        // Track verification event if a certificate ID is provided
+        if (certificateId != null && !certificateId.isEmpty()) {
             try {
                 analyticsService.trackCertificateVerified(certificateId, request);
                 logger.info("Tracked verification event for certificate ID: {}", certificateId);
@@ -79,26 +63,8 @@ public class VerificationController {
      * Generate a SHA-256 fingerprint of the certificate in the keystore.
      * This is a secure way to identify the certificate without exposing the actual key.
      */
-    protected String generateCertificateFingerprint(String keystorePath) {
+    private String generateCertificateFingerprint(String keystorePath) {
         try {
-            // Handle potential environment variable in the path
-            if (keystorePath.startsWith("${") && keystorePath.endsWith("}")) {
-                String envVarName = keystorePath.substring(2, keystorePath.length() - 1);
-                String envValue = System.getenv(envVarName);
-                if (envValue == null) {
-                    // Extract default value if present (format: ${ENV_VAR:default})
-                    if (envVarName.contains(":")) {
-                        String[] parts = envVarName.split(":", 2);
-                        keystorePath = parts[1];
-                    } else {
-                        logger.warn("Environment variable {} not found", envVarName);
-                        return "Certificate fingerprint not available - keystore path not configured";
-                    }
-                } else {
-                    keystorePath = envValue;
-                }
-            }
-
             logger.info("Loading keystore from: {}", keystorePath);
             KeyStoreProvider provider = new KeyStoreProvider(Paths.get(keystorePath));
             Certificate cert = provider.keyStore().getCertificate("authorKey");

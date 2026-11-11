@@ -1,60 +1,61 @@
 package com.kousen.cert.controller;
 
+import com.kousen.cert.analytics.service.AnalyticsService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.ui.ExtendedModelMap;
 
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-    "certificate.keystore=classpath:test-keystore.p12"
+    "certificate.keystore=src/test/resources/keystores/test-keystore.p12"
 })
 class VerificationControllerTest {
 
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        @Primary
-        public VerificationController verificationController() {
-            // Use a hardcoded certificate fingerprint for testing
-            return new VerificationController() {
-                @Override
-                protected String generateCertificateFingerprint(String keystorePath) {
-                    return "Test certificate fingerprint";
-                }
-            };
-        }
-    }
+    // SHA-256 fingerprint: 32 hex pairs separated by colons
+    private static final String FINGERPRINT_PATTERN = "([0-9A-F]{2}:){31}[0-9A-F]{2}";
 
     @Autowired
     private MockMvc mockMvc;
 
+    @MockitoBean
+    private AnalyticsService analyticsService;
+
     @Test
-    void shouldReturnVerificationPageWithDefaultValues() throws Exception {
-        // When/Then - Verify the page renders and contains default values
+    void shouldShowDefaultsAndRealFingerprintWhenNoParameters() throws Exception {
         mockMvc.perform(get("/verify-certificate"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("verify-certificate"))
-                .andExpect(model().attributeExists("name"))
-                .andExpect(model().attributeExists("bookTitle"))
-                .andExpect(model().attributeExists("issueDate"))
-                .andExpect(model().attributeExists("certificateFingerprint"));
+                .andExpect(model().attribute("name", "Not specified"))
+                .andExpect(model().attribute("bookTitle", "Not specified"))
+                .andExpect(model().attribute("issueDate", "Not specified"))
+                .andExpect(model().attribute("certificateFingerprint",
+                        matchesPattern(FINGERPRINT_PATTERN)));
     }
-    
+
     @Test
     void shouldReturnVerificationPageWithProvidedParameters() throws Exception {
-        // When/Then - Verify provided parameters are correctly set in the model
         mockMvc.perform(get("/verify-certificate")
                     .param("name", "John Doe")
                     .param("book", "Modern Java Recipes")
@@ -63,7 +64,46 @@ class VerificationControllerTest {
                 .andExpect(view().name("verify-certificate"))
                 .andExpect(model().attribute("name", "John Doe"))
                 .andExpect(model().attribute("bookTitle", "Modern Java Recipes"))
-                .andExpect(model().attribute("issueDate", "2025-04-18"))
-                .andExpect(model().attributeExists("certificateFingerprint"));
+                .andExpect(model().attribute("issueDate", "2025-04-18"));
+    }
+
+    @Test
+    void shouldTrackVerificationWhenCertificateIdProvided() throws Exception {
+        mockMvc.perform(get("/verify-certificate").param("id", "cert-123"))
+                .andExpect(status().isOk());
+
+        verify(analyticsService).trackCertificateVerified(eq("cert-123"), any());
+    }
+
+    @Test
+    void shouldNotTrackVerificationWhenCertificateIdMissingOrEmpty() throws Exception {
+        mockMvc.perform(get("/verify-certificate")).andExpect(status().isOk());
+        mockMvc.perform(get("/verify-certificate").param("id", "")).andExpect(status().isOk());
+
+        verify(analyticsService, never()).trackCertificateVerified(any(), any());
+    }
+
+    @Test
+    void shouldStillRenderPageWhenTrackingFails() throws Exception {
+        when(analyticsService.trackCertificateVerified(any(), any()))
+                .thenThrow(new RuntimeException("analytics down"));
+
+        mockMvc.perform(get("/verify-certificate").param("id", "cert-123"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("verify-certificate"));
+    }
+
+    @Test
+    void shouldFallBackWhenKeystoreIsUnreadable(@TempDir Path notAKeystore) {
+        // A directory exists but cannot be loaded as a PKCS#12 keystore
+        VerificationController controller =
+                new VerificationController(notAKeystore.toString(), mock(AnalyticsService.class));
+        ExtendedModelMap model = new ExtendedModelMap();
+
+        String view = controller.verifyPage(null, null, null, null, model, null);
+
+        assertThat(view).isEqualTo("verify-certificate");
+        assertThat(model.get("certificateFingerprint"))
+                .isEqualTo("Error generating certificate fingerprint");
     }
 }
