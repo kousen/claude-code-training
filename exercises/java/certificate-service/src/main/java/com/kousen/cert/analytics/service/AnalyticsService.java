@@ -36,13 +36,13 @@ public class AnalyticsService {
         this.meterRegistry = meterRegistry;
     }
 
-    @Async
     public CompletableFuture<Void> trackCertificateGenerated(String certificateId, 
                                                             String purchaserName,
                                                             String purchaserEmail,
                                                             String bookTitle,
                                                             long durationMs,
                                                             HttpServletRequest request) {
+        ClientInfo client = clientInfo(request);
         return CompletableFuture.runAsync(() -> {
             try {
                 CertificateEvent event = new CertificateEvent(EventType.GENERATED, certificateId);
@@ -50,8 +50,8 @@ public class AnalyticsService {
                 event.setPurchaserEmail(purchaserEmail);
                 event.setBookTitle(bookTitle);
                 event.setDurationMs(durationMs);
-                event.setIpAddress(extractIpAddress(request));
-                event.setUserAgent(request.getHeader("User-Agent"));
+                event.setIpAddress(client.ipAddress());
+                event.setUserAgent(client.userAgent());
 
                 eventRepository.save(event);
 
@@ -66,13 +66,13 @@ public class AnalyticsService {
         });
     }
 
-    @Async
     public CompletableFuture<Void> trackCertificateDownloaded(String certificateId, HttpServletRequest request) {
+        ClientInfo client = clientInfo(request);
         return CompletableFuture.runAsync(() -> {
             try {
                 CertificateEvent event = new CertificateEvent(EventType.DOWNLOADED, certificateId);
-                event.setIpAddress(extractIpAddress(request));
-                event.setUserAgent(request.getHeader("User-Agent"));
+                event.setIpAddress(client.ipAddress());
+                event.setUserAgent(client.userAgent());
 
                 eventRepository.save(event);
                 meterRegistry.counter("certificates.downloaded").increment();
@@ -84,13 +84,13 @@ public class AnalyticsService {
         });
     }
 
-    @Async
     public CompletableFuture<Void> trackCertificateVerified(String certificateId, HttpServletRequest request) {
+        ClientInfo client = clientInfo(request);
         return CompletableFuture.runAsync(() -> {
             try {
                 CertificateEvent event = new CertificateEvent(EventType.VERIFIED, certificateId);
-                event.setIpAddress(extractIpAddress(request));
-                event.setUserAgent(request.getHeader("User-Agent"));
+                event.setIpAddress(client.ipAddress());
+                event.setUserAgent(client.userAgent());
 
                 eventRepository.save(event);
 
@@ -109,14 +109,14 @@ public class AnalyticsService {
         });
     }
 
-    @Async
     public CompletableFuture<Void> trackCertificateError(String errorMessage, HttpServletRequest request) {
+        ClientInfo client = clientInfo(request);
         return CompletableFuture.runAsync(() -> {
             try {
                 CertificateEvent event = new CertificateEvent(EventType.FAILED, UUID.randomUUID().toString());
                 event.setErrorMessage(errorMessage);
-                event.setIpAddress(extractIpAddress(request));
-                event.setUserAgent(request.getHeader("User-Agent"));
+                event.setIpAddress(client.ipAddress());
+                event.setUserAgent(client.userAgent());
 
                 eventRepository.save(event);
                 meterRegistry.counter("certificates.errors").increment();
@@ -135,15 +135,15 @@ public class AnalyticsService {
      * @param responseTime The response time in milliseconds
      * @param request      The HTTP request
      */
-    @Async
     public CompletableFuture<Void> trackApiUsage(String endpoint, long responseTime, HttpServletRequest request) {
+        ClientInfo client = clientInfo(request);
         return CompletableFuture.runAsync(() -> {
             try {
                 CertificateEvent event = new CertificateEvent(EventType.API_CALL, UUID.randomUUID().toString());
                 event.setEndpoint(endpoint);
                 event.setDurationMs(responseTime);
-                event.setIpAddress(extractIpAddress(request));
-                event.setUserAgent(request.getHeader("User-Agent"));
+                event.setIpAddress(client.ipAddress());
+                event.setUserAgent(client.userAgent());
 
                 eventRepository.save(event);
 
@@ -238,6 +238,23 @@ public class AnalyticsService {
             );
         } finally {
             sample.stop(meterRegistry.timer("analytics.dashboard.load"));
+        }
+    }
+
+    /** What the tracking methods need from a request, copied before the request can be recycled. */
+    private record ClientInfo(String ipAddress, String userAgent) {}
+
+    /**
+     * Reads the request on the calling thread. The container recycles the request when the
+     * response completes, so background tasks must not touch it. Never throws: analytics
+     * must not fail the request it is recording.
+     */
+    private ClientInfo clientInfo(HttpServletRequest request) {
+        try {
+            return new ClientInfo(extractIpAddress(request), request.getHeader("User-Agent"));
+        } catch (RuntimeException e) {
+            logger.warn("Could not read client details from request: {}", e.getMessage());
+            return new ClientInfo(null, null);
         }
     }
 

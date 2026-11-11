@@ -212,4 +212,30 @@ class AnalyticsServiceTest {
         event.setTimestamp(Instant.now());
         return event;
     }
+
+    @Test
+    void shouldReadRequestOnCallingThreadBeforeGoingAsync() throws Exception {
+        // The servlet container recycles the request once the response completes,
+        // so nothing may touch it from the background task.
+        Thread caller = Thread.currentThread();
+        java.util.concurrent.atomic.AtomicReference<Thread> reader = new java.util.concurrent.atomic.AtomicReference<>();
+        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getHeader("User-Agent")).thenAnswer(invocation -> {
+            reader.set(Thread.currentThread());
+            return "Test Browser";
+        });
+
+        analyticsService.trackCertificateVerified("cert-1", request).get();
+        assertSame(caller, reader.getAndSet(null), "verified");
+
+        analyticsService.trackCertificateDownloaded("cert-1", request).get();
+        assertSame(caller, reader.getAndSet(null), "downloaded");
+
+        analyticsService.trackCertificateError("boom", request).get();
+        assertSame(caller, reader.getAndSet(null), "error");
+
+        analyticsService.trackCertificateGenerated("cert-1", "Ada", null, "Kotlin Cookbook", 10L, request).get();
+        assertSame(caller, reader.getAndSet(null), "generated");
+    }
 }
