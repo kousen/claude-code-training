@@ -60,10 +60,6 @@ public class CertificateMetadataService {
         });
     }
     
-    public CertificateMetadata getCertificateMetadata(String certificateId) {
-        return repository.findById(certificateId).orElse(null);
-    }
-    
     public CertificateMetadata getCertificateMetadataByFilename(String filename) {
         return repository.findByFilename(filename).orElse(null);
     }

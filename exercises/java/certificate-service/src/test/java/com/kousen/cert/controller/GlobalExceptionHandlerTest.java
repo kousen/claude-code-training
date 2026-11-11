@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +33,7 @@ class GlobalExceptionHandlerTest {
         assertThat(problem.getStatus()).isEqualTo(400);
         assertThat(problem.getTitle()).isEqualTo("Validation Error");
         assertThat(problem.getProperties()).containsKey("timestamp");
-        assertThat((Map<String, String>) problem.getProperties().get("errors"))
+        assertThat((Map<String, String>) Objects.requireNonNull(problem.getProperties()).get("errors"))
                 .containsEntry("purchaserName", "Purchaser name is required")
                 .containsEntry("bookTitle", "Invalid book title");
     }

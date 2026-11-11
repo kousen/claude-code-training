@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,9 +17,4 @@ public interface CertificateMetadataRepository extends JpaRepository<Certificate
     
     @Query("SELECT SUM(c.verificationCount) FROM CertificateMetadata c")
     Long sumTotalVerifications();
-    
-    List<CertificateMetadata> findTop10ByOrderByCreatedAtDesc();
-    
-    @Query("SELECT c FROM CertificateMetadata c WHERE c.verificationCount > 0 ORDER BY c.lastVerifiedAt DESC")
-    List<CertificateMetadata> findRecentlyVerified();
 }

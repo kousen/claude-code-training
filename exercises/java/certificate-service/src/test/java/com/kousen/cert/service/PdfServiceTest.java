@@ -5,7 +5,6 @@ import com.kousen.cert.model.CertificateRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mockito;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
