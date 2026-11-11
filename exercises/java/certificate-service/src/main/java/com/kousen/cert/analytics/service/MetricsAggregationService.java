@@ -144,7 +144,8 @@ public class MetricsAggregationService {
      * Aggregate certificate generation counts by book with specified time frame.
      */
     private void aggregateCertificateGenerationByBook(Instant start, Instant end, String timeFrame) {
-        List<Object[]> results = eventRepository.findBookPopularity(CertificateEvent.EventType.GENERATED);
+        List<Object[]> results = eventRepository.findBookPopularityBetween(
+                CertificateEvent.EventType.GENERATED, start, end);
         
         for (Object[] result : results) {
             String bookTitle = (String) result[0];

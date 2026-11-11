@@ -19,8 +19,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,7 +52,7 @@ class MetricsAggregationServiceTest {
             new Object[]{"Modern Java Recipes", 10L},
             new Object[]{"Spring Boot in Action", 5L}
         );
-        when(eventRepository.findBookPopularity(EventType.GENERATED)).thenReturn(bookPopularity);
+        when(eventRepository.findBookPopularityBetween(eq(EventType.GENERATED), any(), any())).thenReturn(bookPopularity);
 
         // Mock verification count
         when(eventRepository.countEventsSince(eq(EventType.VERIFIED), any())).thenReturn(15L);
@@ -147,7 +145,7 @@ class MetricsAggregationServiceTest {
         // Mock book popularity data
         Object[] bookData = new Object[]{"Modern Java Recipes", 50L};
         List<Object[]> bookPopularity = Collections.singletonList(bookData);
-        when(eventRepository.findBookPopularity(EventType.GENERATED)).thenReturn(bookPopularity);
+        when(eventRepository.findBookPopularityBetween(eq(EventType.GENERATED), any(), any())).thenReturn(bookPopularity);
 
         // Mock verification count
         when(eventRepository.countEventsSince(eq(EventType.VERIFIED), any())).thenReturn(30L);
