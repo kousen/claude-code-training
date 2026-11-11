@@ -5,13 +5,11 @@ import com.kousen.cert.service.KeyStoreProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -23,8 +21,8 @@ public class VerificationController {
     private final String certificateFingerprint;
     private final AnalyticsService analyticsService;
 
-    public VerificationController(@Value("${certificate.keystore}") String keystorePath, AnalyticsService analyticsService) {
-        this.certificateFingerprint = generateCertificateFingerprint(keystorePath);
+    public VerificationController(KeyStoreProvider keyStoreProvider, AnalyticsService analyticsService) {
+        this.certificateFingerprint = generateCertificateFingerprint(keyStoreProvider);
         this.analyticsService = analyticsService;
     }
 
@@ -63,10 +61,8 @@ public class VerificationController {
      * Generate a SHA-256 fingerprint of the certificate in the keystore.
      * This is a secure way to identify the certificate without exposing the actual key.
      */
-    private String generateCertificateFingerprint(String keystorePath) {
+    private String generateCertificateFingerprint(KeyStoreProvider provider) {
         try {
-            logger.info("Loading keystore from: {}", keystorePath);
-            KeyStoreProvider provider = new KeyStoreProvider(Paths.get(keystorePath));
             Certificate cert = provider.keyStore().getCertificate("authorKey");
 
             if (cert instanceof X509Certificate) {

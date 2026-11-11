@@ -1,8 +1,8 @@
 package com.kousen.cert.controller;
 
 import com.kousen.cert.analytics.service.AnalyticsService;
+import com.kousen.cert.service.KeyStoreProvider;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,8 +10,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.ui.ExtendedModelMap;
-
-import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -94,10 +92,11 @@ class VerificationControllerTest {
     }
 
     @Test
-    void shouldFallBackWhenKeystoreIsUnreadable(@TempDir Path notAKeystore) {
-        // A directory exists but cannot be loaded as a PKCS#12 keystore
+    void shouldFallBackWhenCertificateCannotBeRead() {
+        KeyStoreProvider brokenProvider = mock(KeyStoreProvider.class);
+        when(brokenProvider.keyStore()).thenThrow(new IllegalStateException("keystore unavailable"));
         VerificationController controller =
-                new VerificationController(notAKeystore.toString(), mock(AnalyticsService.class));
+                new VerificationController(brokenProvider, mock(AnalyticsService.class));
         ExtendedModelMap model = new ExtendedModelMap();
 
         String view = controller.verifyPage(null, null, null, null, model, null);

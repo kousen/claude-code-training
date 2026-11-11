@@ -7,7 +7,6 @@ import com.kousen.cert.service.*;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,7 +18,6 @@ import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -39,17 +37,16 @@ public class CertificateController {
     private final CertificateMetadataService metadataService;
 
     public CertificateController(
-            PdfService pdfService, 
+            PdfService pdfService,
+            PdfSigner pdfSigner,
             CertificateStorageService storageService,
             AnalyticsService analyticsService,
-            CertificateMetadataService metadataService,
-            @Value("${certificate.keystore}") String keystorePath) {
+            CertificateMetadataService metadataService) {
         this.pdfService = pdfService;
+        this.pdfSigner = pdfSigner;
         this.storageService = storageService;
         this.analyticsService = analyticsService;
         this.metadataService = metadataService;
-        Path ksPath = Paths.get(keystorePath);
-        this.pdfSigner = new PdfSigner(new KeyStoreProvider(ksPath));
     }
 
     @PostMapping(produces = "application/pdf")

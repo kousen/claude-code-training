@@ -4,12 +4,12 @@ import com.kousen.cert.service.KeyStoreProvider;
 import com.kousen.cert.service.PdfService;
 import com.kousen.cert.service.PdfSigner;
 import com.kousen.cert.service.QrCodeGenerator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Configuration
@@ -21,9 +21,8 @@ public class CertificateConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    KeyStoreProvider keyStoreProvider() {
-        Path ksPath = Paths.get(System.getProperty("user.home"), ".cert_keystore.p12");
-        return new KeyStoreProvider(ksPath);
+    KeyStoreProvider keyStoreProvider(@Value("${certificate.keystore}") String keystorePath) {
+        return new KeyStoreProvider(Paths.get(keystorePath));
     }
 
     @Bean
