@@ -94,6 +94,8 @@ tasks.jacocoTestReport {
     )
 }
 
+// Opt-in: run `./gradlew jacocoTestCoverageVerification`. Deliberately not part of `check`,
+// so an exercise that adds untested code does not fail the build.
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.test)
 
@@ -103,8 +105,7 @@ tasks.jacocoTestCoverageVerification {
     )
 
     violationRules {
-        // TODO(Ken): tune these three minimums. Measured on 2026-11-11: 84.2% line, 72.3% branch; lowest service class PdfBoxGenerator at 63%.
-        // Too strict fails a student's build mid-lab; too loose is decoration.
+        // Measured on 2026-11-11: 84% line, 72% branch; lowest service class PdfBoxGenerator at 63%.
         rule {
             limit {
                 counter = "LINE"
@@ -129,9 +130,4 @@ tasks.jacocoTestCoverageVerification {
             }
         }
     }
-}
-
-// Enforce the thresholds on every `./gradlew check` (and therefore `build`)
-tasks.check {
-    dependsOn(tasks.jacocoTestCoverageVerification)
 }

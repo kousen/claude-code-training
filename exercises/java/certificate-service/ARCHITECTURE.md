@@ -57,9 +57,9 @@ flowchart TD
     subgraph analytics["com.kousen.cert.analytics"]
         acontroller["controller<br/>AnalyticsController, AnalyticsDashboardController"]
         interceptor["interceptor<br/>ApiTrackingInterceptor"]
-        aservice["service<br/>AnalyticsService, CertificateMetadataService,<br/>MetricsAggregationService"]
-        repository["repository<br/>three Spring Data repositories"]
-        amodel["model<br/>CertificateEvent, CertificateMetadata,<br/>AggregatedMetrics, AnalyticsDTO"]
+        aservice["service<br/>AnalyticsService, CertificateMetadataService"]
+        repository["repository<br/>two Spring Data repositories"]
+        amodel["model<br/>CertificateEvent, CertificateMetadata,<br/>AnalyticsDTO"]
     end
 
     controller --> service
@@ -151,7 +151,7 @@ classDiagram
 - **Drawing.** `PdfBoxGenerator` produces one landscape A4 page: a background image, two decorative TrueType fonts loaded from the classpath with Helvetica fallbacks, centred text, and the QR code bottom left. If saving fails it retries with standard fonts only.
 - **QR content.** `QrCodeGenerator` encodes a URL of the form `{base-url}/verify-certificate?name=…&book=…&date=…`. The base URL comes from `certificate.verification.base-url`, which defaults to `server.url`.
 - **Signing.** `PdfSigner` adds a detached PKCS#7 signature (`adbe.pkcs7.detached`, SHA512withRSA) using the `authorKey` entry in the keystore.
-- **Key material.** `KeyStoreProvider` loads the keystore if the file exists and otherwise generates a 4096-bit RSA key with a self-signed certificate valid for ten years, then writes the file. The password comes from `CERT_PWD` (environment variable, then system property), defaulting to `changeit`.
+- **Key material.** `CertificateConfig` declares one `KeyStoreProvider` bean, built from `certificate.keystore` and shared by the signer and the verification page. It loads the keystore if the file exists and otherwise generates a 4096-bit RSA key with a self-signed certificate valid for ten years, then writes the file. The password comes from `CERT_PWD` (environment variable, then system property), defaulting to `changeit`.
 
 ## Verification
 
@@ -186,11 +186,9 @@ flowchart TD
 
     as["AnalyticsService"]
     cms["CertificateMetadataService"]
-    mas["MetricsAggregationService<br/>scheduled"]
 
     events[("certificate_events")]
     metadata[("certificate_metadata")]
-    metrics[("aggregated_metrics")]
 
     dash["GET /admin/dashboard<br/>Thymeleaf and Chart.js"]
     api["GET /api/analytics/*<br/>JSON"]
@@ -203,8 +201,6 @@ flowchart TD
     as --> events
     as --> metadata
     cms --> metadata
-    events --> mas
-    mas --> metrics
 
     as --> dash
     as --> api
@@ -212,8 +208,8 @@ flowchart TD
 
 - **Writes are asynchronous.** Tracking methods run on a background thread, save a `CertificateEvent`, and update Micrometer counters and timers.
 - **Reads are live queries.** `AnalyticsService.getDashboardData()` builds the whole dashboard from `certificate_events` and `certificate_metadata` on each call. All five `/api/analytics/*` endpoints call it and return one slice.
-- **Aggregation runs on a schedule**: daily at 01:00, weekly on Monday at 02:00, monthly on the 1st at 03:00. It writes generation counts per book, verification counts, API usage and average response time per endpoint, and error counts to `aggregated_metrics`, and deletes rows past the retention period.
-- **The interceptor copies what it needs first.** It reads the client IP (first `X-Forwarded-For` entry, else the remote address) and user agent before handing off, because the request object is recycled after the response.
+- **There is no pre-aggregation.** A scheduled aggregation service and its `aggregated_metrics` table were removed on 2026-11-11 because nothing read them. A database created before that still has the unused table; Hibernate's `update` mode does not drop it.
+- **The request is read before going async.** The client IP (first `X-Forwarded-For` entry, else the remote address) and user agent are copied on the request thread, because the container recycles the request object once the response completes.
 
 ### Data model
 
@@ -242,16 +238,6 @@ erDiagram
         timestamp created_at
         integer verification_count
         timestamp last_verified_at
-    }
-
-    AGGREGATED_METRICS {
-        bigint id PK
-        varchar metric_name
-        varchar metric_key
-        varchar time_frame "daily, weekly, monthly"
-        double metric_value
-        timestamp timestamp
-        timestamp calculated_at
     }
 
     CERTIFICATE_METADATA ||--o{ CERTIFICATE_EVENTS : "certificate_id"
@@ -291,7 +277,7 @@ All settings and their environment variables are listed in the [README configura
 | Full context | `VerificationControllerTest`, `CertificateServiceIntegrationTest` | `@SpringBootTest` on H2 |
 | Database integration | `AnalyticsIntegrationTest` | `@SpringBootTest` against PostgreSQL in Testcontainers; skipped when Docker is absent |
 
-`./gradlew check` runs the tests and then `jacocoTestCoverageVerification`. `config`, `model` and `Application` are excluded from coverage.
+Every test run produces a JaCoCo report. Coverage minimums are opt-in through `./gradlew jacocoTestCoverageVerification` and are not part of `check`. `config`, `model` and `Application` are excluded from coverage.
 
 ## Known gaps
 
@@ -299,8 +285,7 @@ These are current behaviours a maintainer should know about, not design goals.
 
 1. **No authentication.** There is no Spring Security dependency. `/admin/dashboard`, `/api/analytics/*`, the stored-certificate endpoints and (outside the production profile) `/h2-console` are open.
 2. **QR links carry no certificate id.** `VerificationController` only tracks a verification when an `id` parameter is present, and `QrCodeGenerator` does not add one, so scans are not counted.
-3. **The keystore is opened in three places.** `CertificateController` and `VerificationController` each build their own `KeyStoreProvider` from `certificate.keystore`. `CertificateConfig` also declares `KeyStoreProvider` and `PdfSigner` beans that nothing injects and that ignore the property, always using `~/.cert_keystore.p12`.
-4. **Some async tracking reads the request late.** `trackCertificateGenerated`, `trackCertificateDownloaded` and `trackCertificateVerified` read the IP address and user agent from the `HttpServletRequest` inside the background task. The interceptor path avoids this; these three do not.
-5. **Temp files accumulate.** The unsigned PDF is deleted after each request; the signed temp file returned to the client is not.
-6. **Unused template.** `templates/verification-page.html` is not referenced by any controller.
-7. **PDF fallback is untested.** The standard-fonts retry in `PdfBoxGenerator` only runs when saving fails and has no test.
+3. **Signed temp files accumulate.** The unsigned PDF is deleted after each request, and a failed generation removes its own temp file; the signed temp file returned to the client is never deleted.
+4. **Unused template.** `templates/verification-page.html` is not referenced by any controller.
+5. **A bad keystore stops startup.** The `KeyStoreProvider` bean fails fast if the keystore file exists but cannot be loaded, for example with the wrong `CERT_PWD`.
+6. **PDF fallback is untested.** The standard-fonts retry in `PdfBoxGenerator` only runs when saving fails and has no test.

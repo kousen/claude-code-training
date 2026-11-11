@@ -195,14 +195,14 @@ This service has **no authentication**. The analytics dashboard, the analytics A
 
 ```bash
 ./gradlew test                                   # all tests, with a JaCoCo report
-./gradlew check                                  # tests plus the coverage thresholds
+./gradlew jacocoTestCoverageVerification         # optional: tests plus coverage minimums
 ./gradlew test --tests "*IntegrationTest"        # end-to-end tests
 ./gradlew test --tests "com.kousen.cert.service.QrCodeGeneratorPropertyTest"
 ```
 
 - The suite mixes example-based tests with property-based tests (jqwik), which try many generated inputs to find edge cases.
 - `AnalyticsIntegrationTest` starts PostgreSQL in Docker through Testcontainers. It is skipped when Docker is not available.
-- `./gradlew check` fails if coverage drops below the minimums set in `build.gradle.kts`. The HTML report is written to `build/jacocoHtml/index.html`.
+- Every test run writes an HTML coverage report to `build/jacocoHtml/index.html`. The coverage minimums in `build.gradle.kts` are opt-in: `./gradlew jacocoTestCoverageVerification` enforces them, while `check` and `build` do not.
 
 ## Deployment
 

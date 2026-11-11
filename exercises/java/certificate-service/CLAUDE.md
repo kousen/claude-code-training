@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run single test: `./gradlew test --tests "com.kousen.cert.service.KeyStoreProviderTest"`
 - Run property tests: `./gradlew test --tests "com.kousen.cert.service.QrCodeGeneratorPropertyTest"`
 - Clean build: `./gradlew clean build`
-- Tests plus coverage thresholds: `./gradlew check` (fails below the minimums in `build.gradle.kts`)
+- Coverage minimums (opt-in, not part of `check`): `./gradlew jacocoTestCoverageVerification`
 - Coverage report: `build/jacocoHtml/index.html`
 
 ## Test Environment
@@ -38,12 +38,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Main Application**: Certificate generation with PDF signing and QR codes
 - **Analytics Package**: Comprehensive tracking and dashboard system under `com.kousen.cert.analytics`
 - **Database**: H2 for development, PostgreSQL for production via environment variables
-- **Async Processing**: Event tracking uses @Async for performance
+- **Async Processing**: Event tracking runs in background tasks; read anything needed from the `HttpServletRequest` before going async, never inside the task
 - **Web UI**: Thymeleaf templates with Bootstrap and Chart.js for analytics dashboard
 - **No authentication**: there is no Spring Security dependency; `/admin/dashboard` and `/api/analytics/*` are open
 
 ## Runtime Configuration
-- Keystore: `CERTIFICATE_KEYSTORE` (default `~/.cert_keystore.p12`), password `CERT_PWD` (default `changeit`)
+- Keystore: `CERTIFICATE_KEYSTORE` (default `~/.cert_keystore.p12`), password `CERT_PWD` (default `changeit`); one `KeyStoreProvider` bean in `CertificateConfig`, injected wherever the key is needed
 - Stored PDFs: `CERTIFICATE_STORAGE_PATH` (default `~/certificate-service/certificates`)
 - QR code links: `CERTIFICATE_VERIFICATION_BASE_URL`, which defaults to `SERVER_URL` (the deployed Heroku host)
 - A default local run writes the keystore and PDFs under the home directory
@@ -52,14 +52,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Uses environment variable overrides: DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD (driver and dialect are auto-detected from the URL)
 - Hibernate DDL mode configurable via HIBERNATE_DDL_AUTO in the default profile; the production profile hard-codes `update`
 - Production profile available in application-production.yaml
-- Analytics tables: certificate_events, certificate_metadata, aggregated_metrics
+- Analytics tables: certificate_events, certificate_metadata
 
 ## Analytics Features
 - Real-time event tracking for certificate generation, verification, and downloads
 - Dashboard at /admin/dashboard with charts and metrics
 - REST API endpoints under /api/analytics/ for programmatic access
 - Async event processing to avoid blocking main application flow
-- Metrics aggregation service for performance optimization
 
 ## Database Compatibility Notes
 - SQL queries must work with both H2 and PostgreSQL
