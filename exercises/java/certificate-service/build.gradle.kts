@@ -31,9 +31,9 @@ dependencies {
     implementation("org.apache.pdfbox:pdfbox:3.0.4")
 
     // Security and cryptography
-    implementation("org.bouncycastle:bcprov-jdk18on:1.80")
-    implementation("org.bouncycastle:bcpkix-jdk18on:1.80")
-    implementation("org.bouncycastle:bcutil-jdk18on:1.80")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.87")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.87")
+    implementation("org.bouncycastle:bcutil-jdk18on:1.87")
 
     // QR code generation
     implementation("com.google.zxing:core:3.5.3")
