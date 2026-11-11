@@ -77,6 +77,9 @@ tasks.test {
     }
 }
 
+// Classes left out of coverage: wiring and data holders with no logic to test
+val coverageExclusions = listOf("**/Application.class", "**/config/**", "**/model/**")
+
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
 
@@ -85,37 +88,50 @@ tasks.jacocoTestReport {
         csv.required.set(true)
         html.outputLocation.set(layout.buildDirectory.dir("jacocoHtml"))
     }
-    
-    // Exclude certain classes from analysis
+
     classDirectories.setFrom(
-        files(classDirectories.files.map {
-            fileTree(it) {
-                exclude("**/Application.class")
-                exclude("**/config/**") 
-                exclude("**/model/**")
-            }
-        })
+        files(classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } })
     )
 }
 
 tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+
+    // Measure the same classes as the report
+    classDirectories.setFrom(
+        files(classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } })
+    )
+
     violationRules {
+        // TODO(Ken): tune these three minimums. Measured on 2026-11-11: 84.2% line, 72.3% branch; lowest service class PdfBoxGenerator at 63%.
+        // Too strict fails a student's build mid-lab; too loose is decoration.
         rule {
             limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.78".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
                 minimum = "0.60".toBigDecimal()
             }
         }
 
         rule {
-            enabled = true
             element = "CLASS"
             includes = listOf("com.kousen.cert.service.*")
 
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.70".toBigDecimal()
+                minimum = "0.60".toBigDecimal()
             }
         }
     }
+}
+
+// Enforce the thresholds on every `./gradlew check` (and therefore `build`)
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }

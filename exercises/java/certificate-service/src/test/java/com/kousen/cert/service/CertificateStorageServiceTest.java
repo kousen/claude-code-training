@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CertificateStorageServiceTest {
 
@@ -103,5 +104,12 @@ class CertificateStorageServiceTest {
         String filename = storedPath.getFileName().toString();
         assertThat(filename).contains("janesmith");
         assertThat(filename).contains("mockitomadeclear");
+    }
+
+    @Test
+    void shouldFailWhenRequestedCertificateDoesNotExist() {
+        assertThatThrownBy(() -> storageService.getCertificate("missing.pdf"))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("missing.pdf");
     }
 }
