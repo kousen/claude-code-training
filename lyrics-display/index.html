@@ -4,224 +4,203 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lyrics Display</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
   <style>
-    /* Stage at night: deep violet house lights, magenta and amber spots */
+    /* Teleprompter: the current line large, its neighbors dimmed above and below */
     :root {
-      --bg: #120b1f;
-      --spot: #3b1d5e;
-      --card: rgb(30 20 48 / 0.85);
-      --border: #46305f;
-      --text: #fbf5ea;
-      --muted: #b3a3c7;
-      --accent: #ff4d8d;
-      --accent-2: #ffb347;
-      --glow: linear-gradient(90deg, var(--accent), var(--accent-2));
+      --bg: #0e0f13;
+      --text: #f2efe6;
+      --muted: #9ea2af;
+      --border: #4a4e5c;
+      --track: #2e313b;
+      --accent: #f5b83d;
     }
     body {
       margin: 0;
       min-height: 100vh;
       min-height: 100dvh;
-      display: grid;
-      place-items: center;
-      padding: 1rem;
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      background: radial-gradient(ellipse at 50% 0%, var(--spot) 0%, var(--bg) 65%) fixed;
-      color: var(--text);
-    }
-    main {
-      width: min(46rem, 100%);
-      padding: clamp(1.5rem, 5vw, 3rem) clamp(1.25rem, 5vw, 2.5rem) clamp(1.25rem, 4vw, 2rem);
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: clamp(1.25rem, 3vw, 1.75rem);
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      box-shadow: 0 24px 60px rgb(0 0 0 / 0.45), 0 0 80px rgb(255 77 141 / 0.08);
+      gap: 2rem;
+      padding: clamp(1.25rem, 4vw, 3.5rem);
+      font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
-    header { display: flex; align-items: center; gap: 0.75rem; }
-    #number {
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      font-variant-numeric: tabular-nums;
-      color: var(--accent-2);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 0.25rem 0.8rem;
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem 1.5rem;
     }
-    /* Equalizer bars: idle when paused, bouncing while playing */
-    .eq { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
-    .eq i {
-      width: 4px;
-      height: 100%;
-      border-radius: 2px;
-      background: linear-gradient(var(--accent-2), var(--accent));
-      transform-origin: bottom;
-      transform: scaleY(0.25);
-    }
-    .playing .eq i { animation: bounce 0.9s ease-in-out infinite alternate; }
-    .eq i:nth-child(2) { animation-delay: -0.35s; }
-    .eq i:nth-child(3) { animation-delay: -0.6s; }
-    .eq i:nth-child(4) { animation-delay: -0.15s; }
-    @keyframes bounce { to { transform: scaleY(1); } }
+    h1 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+    #counter, .hint { color: var(--muted); font-variant-numeric: tabular-nums; }
 
-    #line {
-      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-      font-size: clamp(1.35rem, 1rem + 2.6vw, 2.4rem);
-      font-style: italic;
-      line-height: 1.4;
-      letter-spacing: 0.005em;
-      text-align: center;
-      text-wrap: balance;
-      min-height: 2.8em; /* room for two lines so the card doesn't jump */
-      display: grid;
-      place-items: center;
-      margin: 0;
-    }
-    progress {
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: clamp(1.25rem, 4vw, 2.5rem);
       width: 100%;
-      height: 6px;
-      appearance: none;
-      border: 0;
-      border-radius: 999px;
-      overflow: hidden;
-      background: var(--border);
-      accent-color: var(--accent);
+      max-width: 65rem;
+      margin: 0 auto;
     }
-    progress::-webkit-progress-bar { background: var(--border); }
-    progress::-webkit-progress-value { background: var(--glow); transition: width 0.4s ease; }
-    progress::-moz-progress-bar { background: var(--glow); }
-    #counter {
+    .row {
+      display: grid;
+      grid-template-columns: 3.5rem minmax(0, 1fr); /* line-number gutter */
+      align-items: baseline;
+      min-height: 2.1rem; /* keeps the layout still on the first and last line */
+      margin: 0;
       color: var(--muted);
-      font-size: 0.8rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-variant-numeric: tabular-nums;
+      font-size: clamp(1.125rem, 2.2vw, 1.625rem);
+      line-height: 1.3;
+      overflow-wrap: anywhere; /* a long unbroken word wraps instead of widening the page */
     }
-    .controls { display: flex; gap: 0.75rem; }
+    .row .n { font-size: 1rem; font-variant-numeric: tabular-nums; }
+    .row.current {
+      color: var(--text);
+      font-size: clamp(1.9rem, 4.6vw, 3.6rem);
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      text-wrap: balance;
+    }
+    .row.current .n { color: var(--accent); font-weight: 700; letter-spacing: 0; }
+
+    /* The gap shrinks as the line count grows, reaching 0 (a continuous bar) once
+       ticks would otherwise be under 4px wide. --count is set from the script. */
+    #ticks {
+      display: flex;
+      gap: clamp(0px, calc((100% - var(--count, 1) * 4px) / var(--count, 1)), 6px);
+      margin-bottom: 1.5rem;
+    }
+    #ticks span { flex: 1; height: 4px; border-radius: 2px; background: var(--track); transition: background 0.3s; }
+    #ticks .done { background: var(--accent); }
+    #ticks .now { background: var(--text); }
+
+    .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 1.5rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .hint { font-size: 0.875rem; }
+    @media (hover: none) { .hint { display: none; } } /* touch devices have no keyboard */
     button {
-      font: 500 1rem system-ui, -apple-system, "Segoe UI", sans-serif;
-      min-width: 6.5rem;
-      padding: 0.7rem 1.25rem;
+      min-height: 48px;
+      padding: 0 1.25rem;
       border: 1px solid var(--border);
-      border-radius: 999px;
+      border-radius: 8px;
       background: transparent;
-      color: inherit;
+      color: var(--text);
+      font: 500 1rem "Space Grotesk", system-ui, sans-serif;
       cursor: pointer;
       transition: border-color 0.15s, transform 0.1s, filter 0.15s;
     }
     button:hover:not(:disabled) { border-color: var(--accent); }
     button:active:not(:disabled) { transform: scale(0.97); }
-    button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
-    button:disabled { opacity: 0.35; cursor: default; }
-    #play { background: var(--glow); border-color: transparent; color: #1a0f24; font-weight: 700; }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    #play { min-width: 7.75rem; border-color: var(--accent); background: var(--accent); color: var(--bg); font-weight: 700; }
     #play:hover:not(:disabled) { filter: brightness(1.1); }
 
-    .hint { color: var(--muted); font-size: 0.75rem; opacity: 0.8; }
-    @media (hover: none) { .hint { display: none; } } /* touch devices have no keyboard */
-
     @media (max-width: 30rem) {
-      main { border-radius: 14px; }
-      .controls { width: 100%; gap: 0.5rem; }
-      button { flex: 1; min-width: 0; padding: 0.8rem 0.5rem; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .playing .eq i { animation: none; transform: scaleY(0.7); }
-      progress::-webkit-progress-value { transition: none; }
+      .controls { width: 100%; }
+      button { flex: 1; padding: 0 0.5rem; }
+      #play { min-width: 0; }
     }
   </style>
 </head>
 <body>
+  <header>
+    <h1>Lyrics Display</h1>
+    <span id="counter"></span>
+  </header>
+
   <main>
-    <header>
-      <span id="number"></span>
-      <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-    </header>
-    <p id="line" aria-live="polite">Loading…</p>
-    <progress id="progress" value="0" max="1"></progress>
-    <div id="counter"></div>
-    <div class="controls">
-      <button id="prev">Previous</button>
-      <button id="play">Play</button>
-      <button id="next">Next</button>
-    </div>
-    <small class="hint">Space to play or pause · ← → to step</small>
+    <p class="row" aria-hidden="true"><span class="n" id="prev-n"></span><span id="prev-line"></span></p>
+    <p class="row current"><span class="n" id="number" aria-hidden="true"></span><span id="line" role="status">Loading…</span></p>
+    <p class="row" aria-hidden="true"><span class="n" id="next-n"></span><span id="next-line"></span></p>
   </main>
 
-  <script>
-    const DELAY_MS = 2000;
-    const lineEl = document.getElementById('line');
-    const counterEl = document.getElementById('counter');
-    const numberEl = document.getElementById('number');
-    const progressEl = document.getElementById('progress');
-    const prevBtn = document.getElementById('prev');
-    const playBtn = document.getElementById('play');
-    const nextBtn = document.getElementById('next');
+  <footer>
+    <div id="ticks" role="progressbar" aria-label="Progress" aria-valuemin="1"></div>
+    <div class="bar">
+      <div class="controls">
+        <button id="prev">‹ Previous</button>
+        <button id="play">Play</button>
+        <button id="next">Next ›</button>
+      </div>
+      <span class="hint">Space to play or pause · arrow keys to step</span>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { parseLyrics, createPlayer } from './lyrics.js';
+
+    const $ = id => document.getElementById(id);
+    const lineEl = $('line');
+    const ticksEl = $('ticks');
+    const prevBtn = $('prev');
+    const playBtn = $('play');
+    const nextBtn = $('next');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    const pad = n => String(n).padStart(2, '0');
 
     let lines = [];
-    let index = 0;
-    let timer = null;
+    let player; // playback state and timing live in lyrics.js
 
     function render() {
+      const index = player.index;
       if (lineEl.textContent !== lines[index]) {
         lineEl.textContent = lines[index];
         if (!reduceMotion.matches) {
-          lineEl.animate(
+          document.querySelector('main').animate(
             [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }],
             { duration: 400, easing: 'ease-out' }
           );
         }
       }
-      numberEl.textContent = `#${index + 1}`;
-      counterEl.textContent = `Line ${index + 1} of ${lines.length}`;
-      progressEl.max = lines.length;
-      progressEl.value = index + 1;
+      const last = lines.length - 1;
+      $('number').textContent = pad(index + 1);
+      $('prev-n').textContent = index > 0 ? pad(index) : '';
+      $('prev-line').textContent = index > 0 ? lines[index - 1] : '';
+      $('next-n').textContent = index < last ? pad(index + 2) : '';
+      $('next-line').textContent = index < last ? lines[index + 1] : '';
+      $('counter').textContent = `Line ${index + 1} of ${lines.length}`;
+      ticksEl.setAttribute('aria-valuemax', lines.length);
+      ticksEl.setAttribute('aria-valuenow', index + 1);
+      ticksEl.setAttribute('aria-valuetext', `Line ${index + 1} of ${lines.length}`);
+      [...ticksEl.children].forEach((tick, k) => {
+        tick.className = k < index ? 'done' : k === index ? 'now' : '';
+      });
       prevBtn.disabled = index === 0;
-      nextBtn.disabled = index === lines.length - 1;
-      playBtn.textContent = timer ? 'Pause' : 'Play';
-      document.body.classList.toggle('playing', Boolean(timer));
+      nextBtn.disabled = index === last;
+      playBtn.textContent = player.playing ? 'Pause' : 'Play';
+      playBtn.disabled = lines.length < 2; // nothing to advance through
     }
 
-    function stop() {
-      clearInterval(timer);
-      timer = null;
-    }
+    // player is undefined until lyrics.txt has loaded, hence the ?.
+    prevBtn.addEventListener('click', () => player?.previous());
+    nextBtn.addEventListener('click', () => player?.next());
+    playBtn.addEventListener('click', () => player?.toggle());
 
-    function go(delta) {
-      index = Math.min(Math.max(index + delta, 0), lines.length - 1);
-      if (index === lines.length - 1) stop(); // auto-play ends on the last line
-      render();
+    // A mouse or touch click (detail > 0) should not leave the button focused, or the
+    // next Space would repeat that button instead of toggling playback. Buttons reached
+    // with Tab keep focus, and Space activates them as on any other page.
+    for (const btn of [prevBtn, playBtn, nextBtn]) {
+      btn.addEventListener('click', e => { if (e.detail > 0) btn.blur(); });
     }
-
-    prevBtn.addEventListener('click', () => { stop(); go(-1); });
-    nextBtn.addEventListener('click', () => { stop(); go(1); });
-    playBtn.addEventListener('click', () => {
-      if (timer) {
-        stop();
-      } else {
-        if (index === lines.length - 1) index = 0; // replay from the top
-        timer = setInterval(() => go(1), DELAY_MS);
-      }
-      render();
-    });
 
     // Keyboard shortcuts reuse the button handlers; click() is a no-op on a disabled button.
     const shortcuts = { ' ': playBtn, ArrowRight: nextBtn, ArrowLeft: prevBtn };
     document.addEventListener('keydown', e => {
       const btn = shortcuts[e.key];
       if (!btn || e.metaKey || e.ctrlKey || e.altKey) return; // leave Cmd+Left (browser back) etc. alone
+      if (e.key === ' ' && e.target instanceof HTMLButtonElement) return; // the focused button handles Space itself
       e.preventDefault(); // no page scroll
       if (e.key === ' ' && e.repeat) return; // holding space shouldn't flicker play/pause
       btn.click();
     });
-    // A focused button also fires its own click when space is released; cancel that
-    // so space always means play/pause and never toggles twice.
-    document.addEventListener('keyup', e => { if (e.key === ' ') e.preventDefault(); });
 
     fetch('lyrics.txt')
       .then(res => {
@@ -229,8 +208,13 @@
         return res.text();
       })
       .then(text => {
-        lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        lines = parseLyrics(text);
         if (!lines.length) throw new Error('lyrics.txt is empty');
+        player = createPlayer(lines, render);
+        const ticks = new DocumentFragment();
+        lines.forEach(() => ticks.append(document.createElement('span')));
+        ticksEl.replaceChildren(ticks);
+        ticksEl.style.setProperty('--count', lines.length);
         render();
       })
       .catch(err => {

@@ -25,3 +25,4 @@ slides-export.pdf
 # Local CLI tool caches (dropped into exercises/)
 .antigravitycli/
 .playwright-cli/
+coverage/
