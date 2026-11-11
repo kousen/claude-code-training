@@ -1467,12 +1467,12 @@ Steps and prompts: `lab_handout.md`
 
 ---
 
-# What's New (Claude Code 2.1.318, Nov 2026)
+# What's New (Claude Code 2.1.322, Nov 2026)
 
 <v-clicks>
 
 - **Auto mode is the default** for interactive sessions; `Shift+Tab` or `permissions.defaultMode` for Manual. `claude -p` gets Auto only first-party with telemetry on (2.1.302)
-- **Models**: Opus 5.5, Sonnet 5.5, Haiku 5.5 — all 1M context; Opus is the default on every plan
+- **Models**: Opus 5.5, Sonnet 5.5, Haiku 5.5 — all 1M context, with Fable 5.2 above them; Opus is the default on every plan
 - **Idle compaction** — a 200K+ conversation left idle ~54 min is compacted before its prompt cache expires; `/config` → **Idle compaction** turns it off
 - **`/auto-mode-setup`** — reads your project and recent sessions to teach auto mode your environment
 - **`ultrathink`** in a prompt = this turn at **xhigh**; `CLAUDE_CODE_SUBAGENT_EFFORT` sets the level subagents run at
@@ -1717,7 +1717,7 @@ The right question isn't "can Claude do this?" — it's "will I understand what 
 
 </v-clicks>
 
-Run `/model` to see what's current — the lineup advances often (Opus 5.5 — 1M context — is the default Opus as of this writing, with Fable 5.1 above it; open `/effort` to see the level each model starts at).
+Run `/model` to see what's current — the lineup advances often (Opus 5.5 — 1M context — is the default Opus as of this writing, with Fable 5.2 above it; open `/effort` to see the level each model starts at).
 
 Rule of thumb: Opus is now the default on every plan, but it draws down usage faster. Drop to Sonnet for routine work when budget matters; keep Opus for the hard problems.
 

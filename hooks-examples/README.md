@@ -6,7 +6,7 @@ This directory contains advanced hook patterns for Claude Code workflow automati
 
 **Hooks** are programmable callbacks that execute in response to Claude Code events. The vocabulary expanded substantially in 2026.
 
-### Event types (verified against Claude Code 2.1.318, Nov 2026)
+### Event types (verified against Claude Code 2.1.322, Nov 2026)
 
 - **SessionStart / SessionEnd** — wraps the whole session
 - **PreToolUse / PostToolUse** — wraps individual tool calls (PreToolUse can modify tool inputs or block). Since 2.1.300 a rewritten `updatedInput` is validated like Claude's own input: unknown keys are dropped, and input the tool rejects denies the call

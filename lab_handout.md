@@ -711,7 +711,7 @@ osqueryi --json "SELECT version FROM osquery_info;"
    ```
    - Claude loads its built-in `plugin-authoring` skill and writes three files under `~/.claude/dev-mods/<session-id>/<mod-name>/`: `.claude-plugin/plugin.json`, `hooks/hooks.json`, and `hooks/register.tsx`
    - In Manual or Accept Edits mode, approve each file (the mods folder is a protected path)
-   - When the first file lands, Claude Code asks **"Turn on the mods Claude writes in this session?"** — choose **Turn them on**. The mod loads when the turn ends
+   - In Auto mode (the default) the mod turns on by itself since 2.1.321. If Claude Code asks **"Turn on the mods Claude writes in this session?"**, choose **Turn them on**. Either way, the mod loads when the turn ends
    - Run `/plugin` and Tab to the **Installed** tab: the mod is listed, with a dim `1 mod active` line
 
 27. **Use it, then change it**:
